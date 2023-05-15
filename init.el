@@ -3,7 +3,7 @@
 (defconst user-home-directory
   (pcase system-type
     ('windows-nt "%userprofile%")
-	(otherwise "~"))
+    (otherwise "~"))
   "User Home directory")
 
 (defconst user-data-directory
@@ -21,9 +21,9 @@
 ;; Create directories if necessary
 (dolist (type '("data" "config" "module"))
   (let* ((var-name (intern (concat "user-" type "-directory")))
-		 (dir (symbol-value var-name)))
+         (dir (symbol-value var-name)))
     (unless (file-directory-p dir)
-	  (make-directory dir))))
+      (make-directory dir))))
 
 ;; Basic settings
 (setq
@@ -78,7 +78,7 @@
     ("circadian" . "https://github.com/guidoschmidt/circadian.el")
     ("one-themes" . "https://github.com/balajisivaraman/emacs-one-themes")
     ("dracula-theme" . "https://github.com/dracula/emacs")
-	
+    
     ("rainbow-delimiters" . "https://github.com/Fanael/rainbow-delimiters")
     ("mwim" . "https://github.com/alezost/mwim.el")
     ("winum" . "https://github.com/deb0ch/emacs-winum")
@@ -101,7 +101,7 @@
     ("alert" . "https://github.com/jwiegley/alert")
     ("org-modern" . "https://github.com/minad/org-modern")
     ("olivetti" . "https://github.com/rnkn/olivetti")
-	
+    
     ;; ("org-blog" . "https://github.com/fingerknight/org-blog")
 
     ("rime" . "https://github.com/DogLooksGood/emacs-rime")
@@ -400,10 +400,10 @@ The whole is wrapped within a `with-eval-after-load'."
     (:doc "Save minibuffer history")
     (:defer 1)
     (:option savehist-additional-variables '(mark-ring
-				                             global-mark-ring
-				                             search-ring
-				                             regexp-search-ring
-				                             extended-command-history)
+                                             global-mark-ring
+                                             search-ring
+                                             regexp-search-ring
+                                             extended-command-history)
              savehist-autosave-interval 300
              history-length 1000
              kill-ring-max 300
@@ -419,8 +419,8 @@ The whole is wrapped within a `with-eval-after-load'."
   (:doc "Fonts setting")
   ;; default fonts
   (set-face-attribute 'default nil
-		              :font (font-spec :family "FantasqueSansM Nerd Font"
-				                       :size 20))
+                      :font (font-spec :family "FantasqueSansM Nerd Font"
+                                       :size 20))
 
   ;; unicode
   (set-fontset-font t 'unicode
@@ -429,7 +429,7 @@ The whole is wrapped within a `with-eval-after-load'."
 
   ;; cn
   (set-fontset-font t '(#x4e00 . #x9fff)
-		            (font-spec :family "思源宋体"
+                    (font-spec :family "思源宋体"
                                :size 15.0)))
 
 (setup gnus
@@ -437,43 +437,43 @@ The whole is wrapped within a `with-eval-after-load'."
 Some private informations are svaed in `gnus-init-file'")
   (:option gnus-home-directory (no-littering-expand-etc-file-name "gnus")
            gnus-use-full-window nil
-	       gnus-use-cache t)
+           gnus-use-cache t)
   ;; authorization
   (setup (:require auth-source)
     (add-to-list 'auth-sources (f-expand ".authinfo" gnus-home-directory)))
   ;; Receiver
   (:option gnus-select-method '(nnimap "outlook"
-			                           (nnimap-address "outlook.office365.com")
-			                           (nnimap-inbox "Inbox")
-			                           (nnimap-server-port 993)
-			                           (nnimap-stream ssl)))
+                                       (nnimap-address "outlook.office365.com")
+                                       (nnimap-inbox "Inbox")
+                                       (nnimap-server-port 993)
+                                       (nnimap-stream ssl)))
   ;; Sender
   (:option send-mail-function 'smtpmail-send-it
-	       smtpmail-smtp-server "smtp.office365.com"
-	       smtpmail-smtp-service 587)
+           smtpmail-smtp-server "smtp.office365.com"
+           smtpmail-smtp-service 587)
 
   ;; Mail folder
   (:option nnfolder-directory (no-littering-expand-var-file-name "gnus/Mail")
            gnus-message-archive-group nil)
   ;; Delete mail
   (:option nnmail-expiry-wait 'never
-	       nnmail-expiry-target "Deleted Messages")
+           nnmail-expiry-target "Deleted Messages")
   ;; Article sorting functions
   (:option gnus-article-sort-functions '(gnus-article-sort-by-most-recent-date
-		                                 gnus-article-sort-by-number))
+                                         gnus-article-sort-by-number))
   (:hooks gnus-summary-prepare gnus-summary-sort-by-most-recent-date)
   ;; timeout
   (:option nntp-connection-timeout 10)
   ;; RSS
   (:hooks gnus-group-prepare
           (lambda ()
-  	        (--map-when
-	         (not (gnus-group-entry (concat "nnrss:"
-									        (car it))))
+              (--map-when
+             (not (gnus-group-entry (concat "nnrss:"
+                                            (car it))))
              (let ((title (car it))
                    (href (cdr it)))
                (gnus-group-make-group title '(nnrss ""))
-		       (push (list title href title) nnrss-group-alist))
+               (push (list title href title) nnrss-group-alist))
              rss-list)  ; written in `gnus-init-file'
             (nnrss-save-server-data nil)))
   ;; WeCaht hook
@@ -662,12 +662,12 @@ based on vertico, orderless, marginalia, embark and consult")
     (defun set-hl-face ()
       "Set hightline face. Used in `init-theme.el'"
       (set-face-attribute 'line-number nil
-		                  :slant 'italic)
+                          :slant 'italic)
       (set-face-attribute 'line-number-current-line nil
                           :foreground (face-attribute 'error :foreground)
                           :background (face-attribute 'highlight :background)
                           :weight 'bold
-		                  :slant 'normal)))
+                          :slant 'normal)))
 
   (:with-mode hl-line-mode
     (:doc "Highlight the current line")
@@ -686,8 +686,8 @@ based on vertico, orderless, marginalia, embark and consult")
                  (ignore-errors (backward-up-list))
                  (funcall fn)))))
     (set-face-attribute 'show-paren-match nil
-    		            :box
-    		            `(:line-width -1
+                        :box
+                        `(:line-width -1
                           :color ,(face-attribute 'default :foreground))))
   (:with-mode rainbow-delimiters-mode
     (:doc "Highlight delimiters according to their depth.")
@@ -788,7 +788,7 @@ based on vertico, orderless, marginalia, embark and consult")
   (defun select-word-at-point ()
     (interactive)
     (when (use-region-p)
-	  (keyboard-escape-quit))
+      (keyboard-escape-quit))
     ;; 确保回到单词的第一个字符
     (jieba-forward-word)
     (jieba-backward-word)
@@ -798,30 +798,30 @@ based on vertico, orderless, marginalia, embark and consult")
   (defun select-next-word (&optional N)
     (interactive "p")
     (when (use-region-p)
-	  (keyboard-escape-quit))
+      (keyboard-escape-quit))
     (set-mark-command nil)
-	(jieba-forward-word N))
+    (jieba-forward-word N))
   (defun select-previous-word (&optional N)
     (interactive "p")
     (when (use-region-p)
-	  (keyboard-escape-quit))
+      (keyboard-escape-quit))
     (set-mark-command nil)
-	(jieba-backward-word N))
+    (jieba-backward-word N))
   (defun select-current-line-and-forward-line (&optional N)
     "Select a line, with cursor locating at the beginning of next line.
     If N given, then select N lines.(-N backward)"
     (interactive "p")
     (when (use-region-p)
-	  (keyboard-escape-quit))
-	(forward-line 0)    ; 移动到行首
-	(set-mark-command nil)
-	(forward-line N))
+      (keyboard-escape-quit))
+    (forward-line 0)    ; 移动到行首
+    (set-mark-command nil)
+    (forward-line N))
   (defun select-current-lin-without-indentation (&optional N)
     "Select a line, withn cursor locating at the end of current line.
     If N given, then select N lines.(-N backward)"
     (interactive "p")
     (when (use-region-p)
-	  (keyboard-escape-quit))
+      (keyboard-escape-quit))
     (mwim-beginning-of-code-or-line)
     (set-mark-command nil)
     (move-end-of-line N))
@@ -830,37 +830,37 @@ based on vertico, orderless, marginalia, embark and consult")
     If N given, then select to next N words."
     (interactive "P")
     (when (use-region-p)
-	  (keyboard-escape-quit))
-	(set-mark-command nil)
-	(jieba-forward-word N))
+      (keyboard-escape-quit))
+    (set-mark-command nil)
+    (jieba-forward-word N))
   (defun select-to-backword-word (&optional N)
     "Select to previous word.
     If N given, then select to previous N words."
     (interactive "P")
     (when (use-region-p)
-	  (keyboard-escape-quit))
-	(set-mark-command nil)
-	(jieba-backward-word N))
+      (keyboard-escape-quit))
+    (set-mark-command nil)
+    (jieba-backward-word N))
   (defun select-to-beginning-of-line (&optional REAL)
     "Select to the beginning of line.
     IF REAL, then indentions include."
     (interactive "P")
     (when (use-region-p)
-	  (keyboard-escape-quit))
-	(set-mark-command nil)
-	(if REAL
-	    (mwim-beginning-of-line)
-	  (mwim-beginning-of-code-or-line)))
+      (keyboard-escape-quit))
+    (set-mark-command nil)
+    (if REAL
+        (mwim-beginning-of-line)
+      (mwim-beginning-of-code-or-line)))
   (defun select-to-end-of-line (&optional REAL)
     "Select to the end of line.
     IF REAL, then spaces include."
     (interactive "P")
     (when (use-region-p)
-	  (keyboard-escape-quit))
-	(set-mark-command nil)
-	(if REAL
-	    (mwim-end-of-line)
-	  (mwim-end-of-code-or-line)))
+      (keyboard-escape-quit))
+    (set-mark-command nil)
+    (if REAL
+        (mwim-end-of-line)
+      (mwim-end-of-code-or-line)))
   (defun delete-word-at-point ()
     (interactive)
     (select-word-at-point)
@@ -931,7 +931,7 @@ based on vertico, orderless, marginalia, embark and consult")
   (:hooks circadian-after-load-theme
           (lambda (theme)
             (setq modeline-dark-theme (string= (symbol-name theme)
-				                               "dracula"))
+                                               "dracula"))
             (set-hl-face)))
   (:option circadian-themes '(("07:00" . one-light)
                               ("20:00" . dracula)))
@@ -944,14 +944,14 @@ based on vertico, orderless, marginalia, embark and consult")
   (:after rime
     (defun my-predicate-punctuation-after-space-cc-p ()
       (let* ((start (save-excursion
-				      (re-search-backward
-					   "[^\s]"
-					   nil
-					   t)))
-		     (string (buffer-substring
-				      (if start start 1)
-				      (point))))
-	    (string-match "\\cc +" string)))
+                      (re-search-backward
+                       "[^\s]"
+                       nil
+                       t)))
+             (string (buffer-substring
+                      (if start start 1)
+                      (point))))
+        (string-match "\\cc +" string)))
     (:option rime-inline-ascii-trigger 'shift-l
              rime-show-preedit 'inline
              rime-show-candidate 'posframe)
@@ -962,7 +962,7 @@ based on vertico, orderless, marginalia, embark and consult")
     (:bind-into-after rime-mode-map rime
       "M-j" rime-force-enable)
     (:after org
-	  (add-to-list 'rime-disable-predicates 'org-in-src-block-p)))
+      (add-to-list 'rime-disable-predicates 'org-in-src-block-p)))
   (:modalka "C-<SPC>" toggle-input-method))
 
 (setup denote
@@ -1048,16 +1048,16 @@ REF:
 https://emacs.stackexchange.com/questions/16654/how-to-re-arrange-things-in-mode-line
 https://github.com/domtronn/all-the-icons.el/wiki/Mode-Line")
   (defcustom modeline-colors '((background . ("#F0F0F0" "#44475a"))
-	                           (background-deep . ("#FAFAFA" "#282a36"))
-	                           (foreground . ("#494B53" "#f8f8f2"))
-	                           (red . ("#E45649" "#ff5555"))
-	                           (blue . ("#4078F2" "#7b6bff"))
-	                           (green . ("#50A14F" "#50fa7b"))
-	                           (yellow . ("#986801" "#f1fa8c"))
-	                           (pink . ("#CA1243" "#ff79c6"))
-	                           (cyan . ("#0184BC" "#8be9fd"))
-	                           (purple . ("#A626A4" "#bd93f9"))
-	                           (orange . ("#C18401" "#ffb86c")))
+                               (background-deep . ("#FAFAFA" "#282a36"))
+                               (foreground . ("#494B53" "#f8f8f2"))
+                               (red . ("#E45649" "#ff5555"))
+                               (blue . ("#4078F2" "#7b6bff"))
+                               (green . ("#50A14F" "#50fa7b"))
+                               (yellow . ("#986801" "#f1fa8c"))
+                               (pink . ("#CA1243" "#ff79c6"))
+                               (cyan . ("#0184BC" "#8be9fd"))
+                               (purple . ("#A626A4" "#bd93f9"))
+                               (orange . ("#C18401" "#ffb86c")))
     "colors in modeline.
 
 This variable is a ALIST, in which keys are colors' name,
@@ -1074,7 +1074,7 @@ DARK: dracula-theme")
 If IF-DARK is not-nil, then return the color-string in
 dark theme."
     (let ((idx (if modeline-dark-theme 1 0)))
-	  (nth idx (assoc-default color-name modeline-colors))))
+      (nth idx (assoc-default color-name modeline-colors))))
   (defvar modeline-left
     '(modeline-winum
       modeline-major-mode
@@ -1090,42 +1090,42 @@ dark theme."
   (defun modeline-major-mode ()
     "主模式"
     (propertize (format "  %s"
-					    (s-upcase (s-replace-regexp "[\s-]*mode$" ""
+                        (s-upcase (s-replace-regexp "[\s-]*mode$" ""
                                                     (format "%s" major-mode))))
                 'help-echo (s-spaced-words (s-titleize (format "%s" major-mode)))
                 'face `(:foreground ,(modeline-get-color 'foreground)
-					    :background ,(modeline-get-color 'background)
-					    :family "Sans Serif"					  
-					    :height 0.8
-					    :weight bold)))
+                        :background ,(modeline-get-color 'background)
+                        :family "Sans Serif"                      
+                        :height 0.8
+                        :weight bold)))
   (defun modeline-buffer-name ()
     "Buffer"
     (let ((name-color (cond
-					   (buffer-read-only (modeline-get-color 'red))
-					   ((buffer-modified-p) (modeline-get-color 'blue))
-					   (t (modeline-get-color 'green)))))
+                       (buffer-read-only (modeline-get-color 'red))
+                       ((buffer-modified-p) (modeline-get-color 'blue))
+                       (t (modeline-get-color 'green)))))
       (propertize " %b"
-		          'face `(:foreground ,name-color
-				          :background ,(modeline-get-color 'background))
-		          'display '(raise -0)
-		          'help-echo (if buffer-file-name
-					             buffer-file-name
-					           (buffer-name)))))
+                  'face `(:foreground ,name-color
+                          :background ,(modeline-get-color 'background))
+                  'display '(raise -0)
+                  'help-echo (if buffer-file-name
+                                 buffer-file-name
+                               (buffer-name)))))
   (defun modeline-rime-state ()
     "Whether RIME Mode is activated."
     (let ((state (length> (and (fboundp 'rime-lighter)
-							   (rime-lighter))
-						  0)))
+                               (rime-lighter))
+                          0)))
       (propertize (format " %s " (if state " RIME" "    "))
-				  'face `(:foreground ,(modeline-get-color 'pink)
-						  :background ,(modeline-get-color 'background))
-				  'display '(raise -0)
-				  )))
+                  'face `(:foreground ,(modeline-get-color 'pink)
+                          :background ,(modeline-get-color 'background))
+                  'display '(raise -0)
+                  )))
   (defun modeline-cursor-info ()
     "光标位置相关信息" 
     (propertize (s-replace "%" "%%" (format-mode-line " %p <%l,%c> "))
-			    'face `(:foreground ,(modeline-get-color 'background)
-		                :background ,(modeline-get-color 'purple))))
+                'face `(:foreground ,(modeline-get-color 'background)
+                        :background ,(modeline-get-color 'purple))))
   (defun modeline-pomodoro ()
     "番茄闹钟"
     (concat
@@ -1144,29 +1144,29 @@ dark theme."
   (defun modeline-denote-title ()
     "Denote's Title"
     (let ((name-color (cond
-					   (buffer-read-only (modeline-get-color 'red))
-					   ((buffer-modified-p) (modeline-get-color 'blue))
-					   (t (modeline-get-color 'green)))))
+                       (buffer-read-only (modeline-get-color 'red))
+                       ((buffer-modified-p) (modeline-get-color 'blue))
+                       (t (modeline-get-color 'green)))))
       (propertize (format " %s "
                           (denote-retrieve-title-value (f-this-file) 'org))
-		          'face `(:foreground ,name-color
-				          :background ,(modeline-get-color 'background))
-		          'display '(raise -0)
-		          'help-echo (if buffer-file-name
-					             buffer-file-name
-					           (buffer-name)))))
+                  'face `(:foreground ,name-color
+                          :background ,(modeline-get-color 'background))
+                  'display '(raise -0)
+                  'help-echo (if buffer-file-name
+                                 buffer-file-name
+                               (buffer-name)))))
   (defun modeline-denote-keywords ()
     "Denote's keywords"
     (mapconcat
      (lambda (it)
        (propertize (format "%s" it)
                    'face `(:foreground ,(modeline-get-color 'orange)
-				           :background ,(modeline-get-color 'background))
-		           'display '(raise -0)
-		           ;; 'help-echo
+                           :background ,(modeline-get-color 'background))
+                   'display '(raise -0)
+                   ;; 'help-echo
                    'mouse-face `(:background ,(modeline-get-color 'background-deep))
                    'local-map (make-mode-line-mouse-map
-						       'mouse-1 `(lambda ()
+                               'mouse-1 `(lambda ()
                                            (interactive)
                                            (let ((denote-ql--kws (list ,it)))
                                              (denote-ql--keyword))))))
@@ -1252,19 +1252,19 @@ dark theme."
       "Set org headline"
       (interactive "p")
       (when (and (org-at-heading-p)
-			     (/= N
-				     (save-excursion
-				       (beginning-of-line)
-				       (length
-					    (nth 1
-						     (s-match org-heading-regexp
+                 (/= N
+                     (save-excursion
+                       (beginning-of-line)
+                       (length
+                        (nth 1
+                             (s-match org-heading-regexp
                                       ;; "^\\([*]\\{1,6\\}\\) "
-								      (buffer-substring-no-properties
-								       (point)
-								       (+ (point) 10))))))))
+                                      (buffer-substring-no-properties
+                                       (point)
+                                       (+ (point) 10))))))))
         (org-toggle-heading))
       (when (and (>= N 1)
-			     (<= N 6))
+                 (<= N 6))
         (org-toggle-heading N)))
     (defun org-headline-set-1 () (interactive) (org-headline-set 1))
     (defun org-headline-set-2 () (interactive) (org-headline-set 2))
@@ -1303,9 +1303,9 @@ dark theme."
     (:doc "Settings of links in Org Mode")
     (defun org-insert-key-sequence ()
       "Insert key sequnce"
-	  (interactive)
-	  (insert (key-description
-			   (read-key-sequence-vector "Pressing... "))))
+      (interactive)
+      (insert (key-description
+               (read-key-sequence-vector "Pressing... "))))
     (defun org-insert-uri ()
       "Try to fetch HTML by URL, parsing it to get title."
       (interactive)
@@ -1361,8 +1361,8 @@ dark theme."
     (:autoload global-org-modern-mode)
     (:option org-hide-emphasis-markers t
              org-modern-list '((?+ . "◦")
-		                       (?- . "•")
-		                       (?* . "•"))
+                               (?- . "•")
+                               (?* . "•"))
              org-modern-checkbox nil
              org-modern-todo-faces
              `(("TODO"  :background "red3" :foreground "white" :weight bold)
