@@ -68,6 +68,7 @@
     ("dash" . "https://github.com/magnars/dash.el")
     ("s" . "https://github.com/magnars/s.el")
     ("f" . "https://github.com/rejeep/f.el")
+    ("ts" . "https://github.com/alphapapa/ts.el")
     
     ("all-the-icons" . "https://github.com/domtronn/all-the-icons.el")
     ("all-the-icons-completion" . "https://github.com/iyefrat/all-the-icons-completion")
@@ -1461,7 +1462,7 @@ dark theme."
   (:autoload excerpt)
   (:option excerpt-dir (no-littering-expand-var-file-name "excerpt")))
 
-(setup blog
+(setup org-blog
   (:doc "Blog publishing system")
   (:load-path "~/gh-repo/org-blog")
   (:autoload org-blog-publish)
