@@ -123,8 +123,6 @@
  
  url-proxy-services '(("http" . "127.0.0.1:7890")
                       ("https" . "127.0.0.1:7890"))
-
- 
  ring-bell-function 'ignore
  make-backup-files nil
  mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil))
@@ -172,11 +170,11 @@
     `(let ((dir (expand-file-name ,pkg user-module-directory)))
        (unless (file-exists-p dir)
          (message "Fetching %s..." ,pkg)
-         (mkdir dir)
-         (shell-command-to-string
-          (format "git --no-pager clone \"%s\" \"%s\""
-                  ,url
-                  ,pkg))
+         (message "%s"
+                  (shell-command-to-string
+                   (format "git --no-pager clone \"%s\" \"%s\""
+                           ,url
+                           dir)))
          (message "Fetched %s." ,pkg))
        (add-to-list 'load-path dir)))
   :documentation "Url to fetch packages"
@@ -646,7 +644,7 @@ TODO: Images don't show up, while other sites do."
   
   (:autoload lsp-bridge-mode)
   (:option lsp-bridge-python-lsp-server "jedi"
-           ;; acm-candidate-match-function 'orderless-regexp
+           acm-candidate-match-function 'orderless-regexp
            )
   (:hook-into prog-mode)
   (:bind-into-after acm-mode-map lsp-bridge
@@ -838,9 +836,8 @@ based on vertico, orderless, marginalia, embark and consult")
 
 (setup window
   (:doc "Operations about windows")
+  (:url "winum" "https://github.com/deb0ch/emacs-winum")
   (:require window winum)
-  (:url "winum" "https://github.com/deb0ch/emacs-winum")    
-
   ;; window
   (defun split-window-right-for-buffer (buffer)
     (interactive "bChoose buffer: \n")
@@ -1012,14 +1009,18 @@ based on vertico, orderless, marginalia, embark and consult")
         "one-themes"  "https://github.com/balajisivaraman/emacs-one-themes"
         "dracula-theme" "https://github.com/dracula/emacs")
   (:require dracula-theme one-themes circadian)
-  (:hooks circadian-after-load-theme
-          (lambda (theme)
-            (setq modeline-dark-theme (string= (symbol-name theme)
-                                               "dracula"))
-            (set-hl-face)))
-  (:option circadian-themes '(("07:00" . one-light)
-                              ("20:00" . dracula)))
-  (circadian-setup))
+  (:option modeline-dark-theme t)
+  (load-theme 'dracula t)
+  (:with-feature circadian
+    (:disabled)
+    (:hooks circadian-after-load-theme
+            (lambda (theme)
+              (setq modeline-dark-theme (string= (symbol-name theme)
+                                                 "dracula"))
+              (set-hl-face)))
+    (:option circadian-themes '(("07:00" . one-light)
+                                ("20:00" . dracula)))
+    (circadian-setup)))
 
 (setup rime
   (:doc "RIME input method in Emacs")
@@ -1052,7 +1053,7 @@ based on vertico, orderless, marginalia, embark and consult")
 (setup denote
   (:doc "A simple note-taking tool for Emacs")
   (:url "denote" "https://github.com/protesilaos/denote")
-  (:autoload denote denote-dired-mode)
+  (:require denote)
   (defun denote-template ()
     "Create note while prompting for a subdirectory.
 
@@ -1294,9 +1295,8 @@ dark theme."
      modeline-right '(modeline-rime-state
                       modeline-cursor-info)))
   (:after org-agenda
-    (:hooks org-agenda-mode-hook modeline-set-agenda))
-  (:after org
-    (:hooks org-mode-hook modeline-set-org))
+    (:hooks org-agenda-mode modeline-set-agenda))
+  (:hooks org-mode modeline-set-org)
   (setq-default mode-line-format
                 '("%e" (:eval
                         (let ((lp (-map #'funcall modeline-left))
@@ -1705,7 +1705,7 @@ hljs.highlightElement(codeElement);
   (:doc "A minor mode for dealing with pairs in Emacs.")
   (:url "smartparens" "https://github.com/Fuco1/smartparens")
   (:require smartparens-config)
-  ;; (:hooks prog-mode turn-on-smartparens-strict-mode)
+  (:hooks prog-mode turn-on-smartparens-strict-mode)
   (:option smartparens-global-mode 1)
   (:bind-into smartparens-mode-map
     "M-a" sp-beginning-of-sexp
@@ -1755,6 +1755,58 @@ hljs.highlightElement(codeElement);
     (set-face-foreground 'indent-guide-face
                          (face-attribute 'font-lock-comment-face
                                          :foreground))))
+
+(setup appindicator
+  (:doc "Package for Emacs to create and control tray icons.")
+  (:url "svg-lib" "https://github.com/rougier/svg-lib/"
+        "appindicator" "https://github.com/jumper047/emacs-appindicator"))
+
+(setup mu4e
+  (:doc "a tool for dealing with e-mail messages stored in the Maildir-format")
+  (:load-path "/usr/share/emacs/site-lisp/mu4e/")
+  (:autoload mu4e)
+  (:after mu4e
+    (:add-to-list mu4e-contexts
+      (let* ((context-name "outlook")
+             (dir-name (concat "/" context-name)))
+        (make-mu4e-context
+         :name context-name
+         :match-func
+         `(lambda (msg)
+            (when msg
+              (string-match-p
+  	           ,(concat "^" dir-name)
+  	           (mu4e-message-field msg :maildir))))
+         :vars
+         `((user-mail-address    . "mrdust1880@outlook.com")
+           (user-full-name       . "Mr.Dust")
+           (mu4e-sent-folder     . ,(concat dir-name "/Sent"))
+           (mu4e-drafts-folder   . ,(concat dir-name "/Drafts"))
+           (mu4e-trash-folder    . ,(concat dir-name "/Deleted"))
+           (mu4e-refile-folder   . ,(concat dir-name "/存档"))
+           (mu4e-compose-signature . "Dare to know.")))))
+    (:option mu4e-change-filenames-when-moving t
+             mu4e-get-mail-command "update-mail"
+             )))
+
+(setup yuck-mode
+  (:doc "Emacs major mode for editing yuck configuration files")
+  (:url "yuck-mode" "https://github.com/mmcjimsey26/yuck-mode")
+  (:autoload yuck-mode)
+  (:add-to-list auto-mode-alist '("\\.\\(yuck\\)\\'" . yuck-mode)))
+
+(setup sxhkd-mode
+  (:doc "A major mode for editing sxhkdrc")
+  (:url "sxhkd-mode" "https://github.com/xFA25E/sxhkd-mode")
+  (:autoload sxhkd-mode)
+  (:add-to-list auto-mode-alist `(,(rx "sxhkdrc" string-end) . sxhkd-mode)))
+
+(setup jinja2-mode
+  (:doc "Jinja2 mode for emacs")
+  (:url "jinja2-mode" "https://github.com/paradoxxxzero/jinja2-mode")
+  (:autoload jinja2-mode)
+  (:add-to-list auto-mode-alist `("\\.\\(jinja2\\)\\'" . jinja2-mode)))
+
 
 (provide 'init)
 ;;; init.el ends
