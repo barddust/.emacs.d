@@ -2,73 +2,28 @@
 
 (setup dirvish
   (:doc "An improved version of the Emacs inbuilt package Dired")
-  (:url "dirvish" "https://github.com/alexluigit/dirvish")
-  (:load-path (f-expand "dirvish/extensions" user-module-directory))
-  (:require dirvish dirvish-icons dirvish-emerge
-            dirvish-quick-access dirvish-subtree)
-  (:custom dirvish-quick-access-entries
-           '(("h" "~/")
-             ("e" "~/.emacs.d/")
-             ("g" "~/gh-repo/")
-             ("n" "~/Note/")
-             ("G" "~/.emacs.d/etc/gnus/")))
-  (defun dirvish--truncate-line (&rest _)
-    (setq-local truncate-lines t))
-  (dirvish-emerge-define-predicate is-dir
-    "If item is a directory"
-    (equal (car type) 'dir))
-  (:option dirvish-use-header-line nil
-           dirvish-attributes '(subtree-state all-the-icons file-size)
-           delete-by-moving-to-trash t
-           dirvish-mode-line-height 21
-           dirvish-default-layout nil
-           dired-listing-switches
-           "-l --almost-all --human-readable --group-directories-first --no-group --time-style=iso"
-           dirvish-emerge-groups
-           '(("Hidden" (regex . "^\\."))
-             ("Directory" (predicate . is-dir))
-             ("Documents" (extensions "pdf" "tex" "bib" "epub"))
-             ("Video" (extensions "mp4" "mkv" "webm"))
-             ("Picture" (extensions "jpg" "png" "svg" "gif"))
-             ("Audio" (extensions "mp3" "flac" "wav" "ape" "aac"))
-             ("Archive" (extensions "gz" "rar" "zip"))
-             ("Org" (extensions "org"))
-             ("Emacs Lisp" (extensions "el"))
-             ("Python" (extensions "py"))
-             ("Files" (regex . ".*"))))
-  (:option dirvish-override-dired-mode 1)
-  (:hooks dirvish-find-entry dirvish--truncate-line
-          dirvish-setup dirvish-emerge-mode)
-  (:modalka "C-x C-d" dirvish)
-  (:bind-into-after dirvish-mode-map dirvish
-    "a" dirvish-quick-access
-    "j" dired-next-line
-    "k" dired-previous-line
-    "f" dired-goto-file
-    "b" dired-up-directory
-    "n" dirvish-emerge-next-group
-    "p" dirvish-emerge-previous-group
-    "TAB" dirvish-subtree-toggle
-    "M-t" dirvish-layout-toggle))
+  ;; setup from application
+  (:require setup-dirvish))
 
 (setup cape
   (:doc "Completion At Point Extensions")
   (:url "cape" "https://github.com/minad/cape")
   (:require cape)
-  (:add-to-list completion-at-point-functions 'cape-dabbrev)
-  (:add-to-list completion-at-point-functions 'cape-file))
+  (:option (append completion-at-point-functions) 'cape-dabbrev
+           (append completion-at-point-functions) 'cape-file))
 
 (setup hideshow
     (:doc "Minor mode cmds to selectively display code/comment blocks")
-    (:diminish hs-minor-mode nil hideshow)
-    (:bind-into-after hs-minor-mode-map hideshow
+    (:with-mode hs-minor-mode
+      (:diminish)
+      (:hook-into prog-mode))
+    (:bind-into hs-minor-mode-map
       "C-c C-v C-c" hs-toggle-hiding
       "C-c C-v C-h" hs-hide-block
       "C-c C-v C-s" hs-show-block
       "C-c C-v C-t" hs-hide-all
       "C-c C-v C-a" hs-show-all
-      "C-c C-v C-l" hs-hide-level)
-    (:hooks prog-mode hs-minor-mode))
+      "C-c C-v C-l" hs-hide-level))
 
 (setup (:require display-line-numbers)
   (:doc "Interface for display-line-numbers")
@@ -82,13 +37,14 @@
                       :weight 'bold
                       :slant 'normal))
 
-(setup (:require hl-line)
+(setup hl-line
   (:doc "Highlight the current line")
   (:hook-into prog-mode))
 
-(setup (:require paren)
+(setup paren
     (:doc "Highlight matching paren")
-    (:hooks prog-mode show-paren-mode)
+    (:with-mode show-paren-mode
+      (:hook-into prog-mode))
     (:option show-paren-delay 0)
     (define-advice show-paren-function (:around (fn) fix)
       "Highlight enclosing parens."
@@ -150,14 +106,14 @@
                                (mode . help-mode)
                                (mode . debug-mode)))
                       ("Hidden" (name . "^\\*[^*]*\\*$"))))))
-    (:bind-into-after ibuffer-mode-map ibuffer
-                      "j" ibuffer-forward-line
-                      "k" ibuffer-backward-line
-                      "M-j" ibuffer-forward-line
-                      "M-k" ibuffer-backward-line
-                      "f" ibuffer-jump-to-buffer
-                      "S-f" ibuffer-forward-line
-                      "M-f" ibuffer-forward-line)
+    (:bind-into ibuffer-mode-map
+                "j" ibuffer-forward-line
+                "k" ibuffer-backward-line
+                "M-j" ibuffer-forward-line
+                "M-k" ibuffer-backward-line
+                "f" ibuffer-jump-to-buffer
+                "S-f" ibuffer-forward-line
+                "M-f" ibuffer-forward-line)
     (:modalka "C-x C-b" ibuffer))
 
 (setup jieba
@@ -165,7 +121,7 @@
   (:url "jsonrpc" "https://github.com/paritytech/jsonrpc/"
         "jieba" "https://github.com/cireu/jieba.el")
   (:require jieba)
-  (:diminish jieba-mode)
+  (:diminish)
   (defun select-word-at-point ()
     (interactive)
     (when (use-region-p)
@@ -296,8 +252,7 @@
                 mhtml-mode
                 scss-mode
                 latex-mode))
-  (:after eglot
-    (:option eldoc-echo-area-use-multiline-p 1)))
+  (:option eldoc-echo-area-use-multiline-p 1))
 
 (setup denote
   (:doc "A simple note-taking tool for Emacs")
@@ -375,7 +330,8 @@ set to '(subdirectory title keywords)."
                         :foreground
                         (face-attribute 'font-lock-string-face
                                         :foreground)))
-  (:hooks dired-mode denote-dired-mode))
+  (:with-mode denote-dired-mode
+    (:hook-into dired-mode)))
 
 ;; (setup modeline
 ;;   (:doc "Configuration of mode line"
@@ -555,38 +511,12 @@ set to '(subdirectory title keywords)."
 ;;                                          (list (modeline-space))
 ;;                                          rp)))))))
 
-(setup org-mode
+(setup org
   (:doc "Org Mode settings")
-  (:option org-todo-keywords '((sequence "TODO(t)"
-                                         "DOING(i)"
-                                         "WAIT(w@/!)"
-                                         "|"
-                                         "DONE(d!)"
-                                         "CANCELED(c@)")))
-  (:option org-edit-src-content-indentation 0
-           org-auto-align-tags nil
-           org-tags-column 0
-           org-use-sub-superscripts nil)
-  (:hook (lambda () (setq word-wrap nil)))
-  (:bind-into-after org-mode-map org
-                    "C-c s" org-schedule
-                    "C-c d" org-deadline)
 
-  (setup org-apparence
-    (:doc "Org Apparence settings")
-    (:after org
-      (set-face-attribute 'org-checkbox nil :box nil)
-      (set-face-attribute 'org-level-1 nil :weight 'semi-bold :height 1.0)
-      (set-face-attribute 'org-level-2 nil :weight 'semi-bold :height 1.0)
-      (set-face-attribute 'org-level-3 nil :weight 'semi-bold :height 1.0)
-      (set-face-attribute 'org-level-4 nil :weight 'semi-bold :height 1.0)
-      (set-face-attribute 'org-level-5 nil :weight 'semi-bold :height 1.0)))
-
-  (setup org-headline
-    (:doc "Org Headline settings")
-    (defun org-headline-set (&optional N)
+  (defun dust/org-headline-set (N)
       "Set org headline"
-      (interactive "p")
+      ;; (interactive "p")
       (when (and (org-at-heading-p)
                  (/= N
                      (save-excursion
@@ -602,234 +532,243 @@ set to '(subdirectory title keywords)."
       (when (and (>= N 1)
                  (<= N 6))
         (org-toggle-heading N)))
-    (defun org-headline-set-1 () (interactive) (org-headline-set 1))
-    (defun org-headline-set-2 () (interactive) (org-headline-set 2))
-    (defun org-headline-set-3 () (interactive) (org-headline-set 3))
-    (defun org-headline-set-4 () (interactive) (org-headline-set 4))
-    (defun org-headline-set-5 () (interactive) (org-headline-set 5))
-    (defun org-headline-set-6 () (interactive) (org-headline-set 6))
-    (:bind-into-after org-mode-map org
-                      "C-c h 1" org-headline-set-1
-                      "C-c h 2" org-headline-set-2
-                      "C-c h 3" org-headline-set-3
-                      "C-c h 4" org-headline-set-4
-                      "C-c h 5" org-headline-set-5
-                      "C-c h 6" org-headline-set-6))
-  
-  (setup org-agenda
-    (:doc "Org Agenda settings")
-    (:modalka "C-\\" org-cycle-agenda-files)
-    (:after org-agenda
-      (:option org-agenda-tags-column 0
-               org-agenda-use-time-grid t
-               org-agenda-time-grid '((daily today require-timed)
-                                      (700 1200 1800 2300)
-                                      "......"
-                                      "----------------")
-               org-agenda-start-with-follow-mode t
-               org-agenda-skip-scheduled-if-done t)))
+  (defun dust/org-headline-set-1 () (interactive) (dust/org-headline-set 1))
+  (defun dust/org-headline-set-2 () (interactive) (dust/org-headline-set 2))
+  (defun dust/org-headline-set-3 () (interactive) (dust/org-headline-set 3))
+  (defun dust/org-headline-set-4 () (interactive) (dust/org-headline-set 4))
+  (defun dust/org-headline-set-5 () (interactive) (dust/org-headline-set 5))
+  (defun dust/org-headline-set-6 () (interactive) (dust/org-headline-set 6))
 
-  (setup org-babel
-    (:doc "Execute source code within Org")
-    (org-babel-do-load-languages 'org-babel-load-languages
-                                 '((python . t)
-                                   (lisp . t))))
-
-  (setup org-link
-    (:doc "Settings of links in Org Mode")
-    (defun org-insert-key-sequence ()
+  (defun dust/org-insert-key-sequence ()
       "Insert key sequnce"
       (interactive)
       (insert (key-description
                (read-key-sequence-vector "Pressing... "))))
-    (defun org-insert-uri ()
-      "Try to fetch HTML by URL, parsing it to get title."
-      (interactive)
-      (let ((title "")
-            (uri (read-from-minibuffer "Uri: ")))
-        (with-current-buffer
-            (url-retrieve-synchronously uri t nil 10)
-          (let* ((dom (libxml-parse-html-region
-                       (point-min) (point-max))))
-            (setq title 
-                  (and dom
-                       (dom-text (dom-by-tag dom 'title))))))
-        (unless (or title
-                    (length= title 0))
-          (setq title
-                (read-from-minibuffer
-                 "Failed to get title. Manually descript: ")))
-        (insert (format "[[%s][%s]]" uri (s-trim title)))))
-    (defvar org-image-directory nil)
-    (:option org-image-directory "~/Note/assets")
-    (defun org-image-insert ()
-      "Insert image from Special directory into current buffer."
-      (interactive)
-      
-      (defun image--sort-completion-table (completions)
-        (lambda (string pred action)
-          (if (eq action 'metadata)
-              `(metadata (display-sort-function . ,#'identity))
-            (complete-with-action action completions string pred))))
-      
-      (let ((images (--sort (>= (f-modification-time it 'seconds)
-                                (f-modification-time other 'seconds))
-                            (f-files org-image-directory)))
-            (cur-file (f-this-file)))
-        (if (not cur-file)
-            (message "Current buffer is not a file: %s" (buffer-name
-                                                         (current-buffer)))
-          (insert (format "[[file:%s]]\n"
-                          (f-relative
-                           (completing-read
-                            "Insert image: "
-                            (image--sort-completion-table images)
-                            nil t)
-                           (f-dirname cur-file)))))))
-    (:bind-into-after org-mode-map org
-                      "C-c C-i" org-insert-uri
-                      "C-C C-k" org-insert-key-sequence
-                      "C-c C-m" org-image-insert)
-    (:option org-link-file-path-type 'relative))
+  (defun dust/org-insert-uri ()
+    "Try to fetch HTML by URL, parsing it to get title."
+    (interactive)
+    (let ((title "")
+          (uri (read-from-minibuffer "Uri: ")))
+      (with-current-buffer
+          (url-retrieve-synchronously uri t nil 10)
+        (let* ((dom (libxml-parse-html-region
+                     (point-min) (point-max))))
+          (setq title 
+                (and dom
+                     (dom-text (dom-by-tag dom 'title))))))
+      (unless (or title
+                  (length= title 0))
+        (setq title
+              (read-from-minibuffer
+               "Failed to get title. Manually descript: ")))
+      (insert (format "[[%s][%s]]" uri (s-trim title)))))
 
-  (setup org-modern
-    (:doc "A modern style for Org buffers")
-    (:url "org-modern" "https://github.com/minad/org-modern")
-    (:autoload global-org-modern-mode)
-    (:option org-hide-emphasis-markers t
-             org-modern-list '((?+ . "◦")
-                               (?- . "•")
-                               (?* . "•"))
-             org-modern-checkbox nil
-             org-modern-todo-faces
-             `(("TODO"  :background "red3" :foreground "white" :weight bold)
-               ("DOING" :background "SteelBlue" :foreground "white" :weight bold)
-               ("WAIT" :background "orange" :foreground "white" :weight bold)
-               ("DONE" :background "SeaGreen4" :foreground "white" :weight bold)
-               ("CANCELED" :foreground ,(face-attribute 'fringe
-                                                        :foreground)
-                :weight bold
-                :strike-through ,(face-attribute 'fringe
-                                                 :foreground))))
-    (:hooks org-mode global-org-modern-mode))
+  (:option dust/org-image-directory "~/Note/assets")
+  (defun dust/org-image-insert ()
+    "Insert image from Special directory into current buffer."
+    (interactive)
+    
+    (defun image--sort-completion-table (completions)
+      (lambda (string pred action)
+        (if (eq action 'metadata)
+            `(metadata (display-sort-function . ,#'identity))
+          (complete-with-action action completions string pred))))
+    
+    (let ((images (--sort (>= (f-modification-time it 'seconds)
+                              (f-modification-time other 'seconds))
+                          (f-files dust/org-image-directory)))
+          (cur-file (f-this-file)))
+      (if (not cur-file)
+          (message "Current buffer is not a file: %s" (buffer-name
+                                                       (current-buffer)))
+        (insert (format "[[file:%s]]\n"
+                        (f-relative
+                         (completing-read
+                          "Insert image: "
+                          (image--sort-completion-table images)
+                          nil t)
+                         (f-dirname cur-file)))))))
 
-  (setup olivetti
-    (:doc "A simple Emacs minor mode for a nice writing environment.")
-    (:url "olivetti" "https://github.com/rnkn/olivetti")
-    (:option olivetti-body-width 120)
-    (:autoload olivetti-mode)
-    (:diminish olivetti-mode nil olivetti)
-    (:hooks org-mode olivetti-mode))
+  (:option org-todo-keywords '((sequence "TODO(t)"
+                                         "DOING(i)"
+                                         "WAIT(w@/!)"
+                                         "|"
+                                         "DONE(d!)"
+                                         "CANCELED(c@)")))
+  (:option org-edit-src-content-indentation 0
+           org-auto-align-tags nil
+           org-tags-column 0
+           org-use-sub-superscripts nil
+           org-link-file-path-type 'relative)
+  (:hook (lambda () (visual-line-mode 0)))
+  
+  (:bind
+   "C-c C-i" dust/org-insert-uri
+   "C-C C-k" dust/org-insert-key-sequence
+   "C-c C-m" dust/org-image-insert
+   "C-c s" org-schedule
+   "C-c d" org-deadline
+   "C-c h 1" dust/org-headline-set-1
+   "C-c h 2" dust/org-headline-set-2
+   "C-c h 3" dust/org-headline-set-3
+   "C-c h 4" dust/org-headline-set-4
+   "C-c h 5" dust/org-headline-set-5
+   "C-c h 6" dust/org-headline-set-6)
 
-  (setup org-pomodoro
-    (:doc "Basic support for Pomodoro technique in Org Mode.")
-    (:url "org-pomodoro" "https://github.com/marcinkoziej/org-pomodoro")
-    (:url "alert" "https://github.com/jwiegley/alert")
-    (:autoload org-pomodoro)
-    (:option org-pomodoro-start-sound-p t
-             org-pomodoro-length 25
-             org-pomodoro-short-break-length 5
-             org-pomodoro-long-break-length 30)
-    (:bind-into-after org-agenda-mode-map org-agenda
-                      "G" org-pomodoro)
-    (:hooks org-pomodoro-long-break-finished (lambda ()
-                                               (setq org-pomodoro-count 0))))
+  (:after org
+    (set-face-attribute 'org-checkbox nil :box nil)
+    (set-face-attribute 'org-level-1 nil :weight 'semi-bold :height 1.0)
+    (set-face-attribute 'org-level-2 nil :weight 'semi-bold :height 1.0)
+    (set-face-attribute 'org-level-3 nil :weight 'semi-bold :height 1.0)
+    (set-face-attribute 'org-level-4 nil :weight 'semi-bold :height 1.0)
+    (set-face-attribute 'org-level-5 nil :weight 'semi-bold :height 1.0)))
+  
+(setup org-agenda
+  (:doc "Org Agenda settings")
+  (:modalka "C-\\" org-cycle-agenda-files)
+  (:option org-agenda-tags-column 0
+           org-agenda-use-time-grid t
+           org-agenda-time-grid '((daily today require-timed)
+                                  (700 1200 1800 2300)
+                                  "......"
+                                  "----------------")
+           org-agenda-start-with-follow-mode t
+           org-agenda-skip-scheduled-if-done t))
 
-  (setup org-latex
-    (:doc "Org Latex Environment")
-    (:option org-latex-listings t
-             org-latex-pdf-process
-             '("xelatex -interaction nonstopmode -output-directory %o %f"
-               "xelatex -interaction nonstopmode -output-directory %o %f"
-               "xelatex -interaction nonstopmode -output-directory %o %f")
-             org-latex-compiler "xelatex")
-    (:add-to-list org-latex-packages-alist '("" "xeCJK"))
-    ;; Beamer
-    (:option org-beamer-frame-level 2
-             org-beamer-outline-frame-title "Content"))
+(setup org-babel
+  (:doc "Execute source code within Org")
+  (org-babel-do-load-languages 'org-babel-load-languages
+                               '((python . t)
+                                 (lisp . t))))
 
-  (setup org-drill
-    (:doc "An Spaced Repetition System")
-    (:url "persist" "https://github.com/emacs-straight/persist"
-          "org-drill" "https://github.com/louietan/org-drill")
-    (:autoload org-drill)
-    (:option drill-directory "~/Drill/"
-             org-drill-maximum-items-per-session 40
-             org-drill-maximum-duration 30)
-    (defun drill ()
-      "Start to drill."
-      (interactive)
-      (setq org-drill-scope
-            (f-files (f-expand (completing-read
-                                "What to drill: "
-                                (-map #'f-base                
-                                      (f-directories drill-directory))
-                                nil t)
-                               drill-directory)))
-      (org-drill))
-    (defalias 'destructuring-bind 'cl-destructuring-bind))
+(setup org-modern
+  (:doc "A modern style for Org buffers")
+  (:url "org-modern" "https://github.com/minad/org-modern")
+  (:autoload global-org-modern-mode)
+  (:option org-hide-emphasis-markers t
+           org-modern-list '((?+ . "◦")
+                             (?- . "•")
+                             (?* . "•"))
+           org-modern-checkbox nil
+           org-modern-todo-faces
+           `(("TODO"  :background "red3" :foreground "white" :weight bold)
+             ("DOING" :background "SteelBlue" :foreground "white" :weight bold)
+             ("WAIT" :background "orange" :foreground "white" :weight bold)
+             ("DONE" :background "SeaGreen4" :foreground "white" :weight bold)
+             ("CANCELED" :foreground ,(face-attribute 'fringe
+                                                      :foreground)
+              :weight bold
+              :strike-through ,(face-attribute 'fringe
+                                               :foreground))))
+  (:with-mode global-org-modern-mode
+    (:hook-into org-mode)))
 
-  (setup org-journal
-    (:doc "A simple personal diary / journal using in Emacs.")
-    (:url "org-journal" "https://github.com/bastibe/org-journal")
-    (:autoload org-journal-new-entry)
-    (defun org-journal-file-header-func (time)
-      "Custom function to create journal header."
-      (concat "#+title: Daily Journal\n"
-              "#+startup: overview\n\n"))
-    (defun org-journal-find-location ()
-      ;; Open today's journal, but specify a non-nil prefix argument in order to
-      ;; inhibit inserting the heading; org-capture will insert the heading.
-      (org-journal-new-entry t)
-      (goto-char (point-max)))
-    (:after org-journal
-      (:doc "https://github.com/bastibe/org-journal/issues/369")
-      (defconst org-journal--cache-file
-        (no-littering-expand-var-file-name "org-journal.cache")))
-    (:option org-journal-dir "~/Journal"
-             org-journal-find-file 'find-file
+(setup olivetti
+  (:doc "A simple Emacs minor mode for a nice writing environment.")
+  (:url "olivetti" "https://github.com/rnkn/olivetti")
+  (:diminish)
+  (:autoload olivetti-mode)
+  (:option olivetti-body-width 120)
+  (:hook-into org-mode))
 
-             org-journal-date-format "%Y-%m-%d, %a"
-             org-journal-carryover-items
-             "TODO=\"TODO\"|TODO=\"DOING\"|TODO=\"WAIT\""
+(setup org-pomodoro
+  (:doc "Basic support for Pomodoro technique in Org Mode.")
+  (:url "org-pomodoro" "https://github.com/marcinkoziej/org-pomodoro")
+  (:url "alert" "https://github.com/jwiegley/alert")
+  (:autoload org-pomodoro)
+  (:option org-pomodoro-start-sound-p t
+           org-pomodoro-length 25
+           org-pomodoro-short-break-length 5
+           org-pomodoro-long-break-length 30)
+  (:after org-agenda
+    (:bind "G" org-pomodoro))
+  (:with-hook org-pomodoro-long-break-finished-hook
+    (lambda () (setq org-pomodoro-count 0))))
 
-             org-journal-file-type 'daily
-             org-journal-file-header 'org-journal-file-header-func
-             
-             org-journal-enable-cache t
-             
-             org-journal-file-format "%Y%m%d.org"
-             org-journal-hide-entries-p nil
+(setup org-latex
+  (:doc "Org Latex Environment")
+  (:option org-latex-listings t
+           org-latex-pdf-process
+           '("xelatex -interaction nonstopmode -output-directory %o %f"
+             "xelatex -interaction nonstopmode -output-directory %o %f"
+             "xelatex -interaction nonstopmode -output-directory %o %f")
+           org-latex-compiler "xelatex"
+           (append org-latex-packages-alist) '("" "xeCJK"))
+  ;; Beamer
+  (:option org-beamer-frame-level 2
+           org-beamer-outline-frame-title "Content"))
 
-             org-journal-enable-agenda-integration t)
-    (defun org-journal-new-journal ()
-      (interactive)
-      (org-journal-new-entry t))
-    (:modalka "C-c C-j" org-journal-new-journal))
+(setup org-drill
+  (:doc "An Spaced Repetition System")
+  (:url "persist" "https://github.com/emacs-straight/persist"
+        "org-drill" "https://github.com/louietan/org-drill")
+  (:autoload org-drill)
+  (:option drill-directory "~/Drill/"
+           org-drill-maximum-items-per-session 40
+           org-drill-maximum-duration 30)
+  (defun dust/drill ()
+    "Start to drill."
+    (interactive)
+    (setq org-drill-scope
+          (f-files (f-expand (completing-read
+                              "What to drill: "
+                              (-map #'f-base                
+                                    (f-directories drill-directory))
+                              nil t)
+                             drill-directory)))
+    (org-drill))
+  (defalias 'destructuring-bind 'cl-destructuring-bind))
 
-  (setup org-capture
-    (:doc "Quickly store notes with little interruption.")
-    (:modalka "C-c c" org-capture)
-    (:after org-capture
-      (:add-to-list org-capture-templates
-                    '("j" "Journal Entry" plain
-                      (function org-journal-find-location)
-                      "** TODO %?\n"
-                      :jump-to-captured nil
-                      :kill-buffer t)))))
+(setup org-journal
+  (:doc "A simple personal diary / journal using in Emacs.")
+  (:url "org-journal" "https://github.com/bastibe/org-journal")
+  (:autoload org-journal-new-entry)
+  (defun org-journal-file-header-func (time)
+    "Custom function to create journal header."
+    (concat "#+title: Daily Journal\n"
+            "#+startup: overview\n\n"))
+  (defun org-journal-find-location ()
+    ;; Open today's journal, but specify a non-nil prefix argument in order to
+    ;; inhibit inserting the heading; org-capture will insert the heading.
+    (org-journal-new-entry t)
+    (goto-char (point-max)))
+  (:after org-journal
+    (:doc "https://github.com/bastibe/org-journal/issues/369")
+    (defconst org-journal--cache-file
+      (no-littering-expand-var-file-name "org-journal.cache")))
+  (:option org-journal-dir "~/Journal"
+           org-journal-find-file 'find-file
+
+           org-journal-date-format "%Y-%m-%d, %a"
+           org-journal-carryover-items
+           "TODO=\"TODO\"|TODO=\"DOING\"|TODO=\"WAIT\""
+
+           org-journal-file-type 'daily
+           org-journal-file-header 'org-journal-file-header-func
+           
+           org-journal-enable-cache t
+           
+           org-journal-file-format "%Y%m%d.org"
+           org-journal-hide-entries-p nil
+
+           org-journal-enable-agenda-integration t)
+  (defun dust/org-journal-new-journal ()
+    (interactive)
+    (org-journal-new-entry t))
+  (:modalka "C-c C-j" dust/org-journal-new-journal))
 
 (setup yaml-mode
   (:doc "Support for YAML Language")
   (:url "yaml-mode" "https://github.com/yoshiki/yaml-mode")
   (:autoload yaml-mode)
-  (:add-to-list auto-mode-alist '("\\.\\(yml\\|yaml\\)\\'" . yaml-mode)))
+  (:file-match "\\.\\(yml\\|yaml\\)\\'"))
 
 (setup markdown-mode
   (:doc "Support for Markdown")
   (:url "markdown-mode" "https://github.com/jrblevin/markdown-mode")
   (:autoload markdown-mode)
   (:option markdown-command "multimarkdown")
-  (:add-to-list auto-mode-alist '("\\.md\\'" . markdown-mode)))
+  (:file-match "\\.md\\'"))
 
 (setup excerpt
   (:doc "Excerpt management")
@@ -861,7 +800,7 @@ set to '(subdirectory title keywords)."
            org-export-with-section-numbers nil)
   (:option org-blog-page-head-template
            (list "<link rel=\"icon\" href=\"/static/favicon.ico\">"
-                   "<link href= \"/static/style/style.css\" rel=\"stylesheet\" type=\"text/css\" />"))
+                 "<link href= \"/static/style/style.css\" rel=\"stylesheet\" type=\"text/css\" />"))
   
   (:option org-blog-page-header-template
            (concat "<div class=\"home-page\">\n"
@@ -950,8 +889,8 @@ hljs.highlightElement(codeElement);
         "phi-search" "https://github.com/zk-phi/phi-search")
   (:autoload elisp-def-mode)
   (:hook-into emacs-lisp-mode ielm-mode)
-  (:after elisp-def
-    (:diminish elisp-def-mode)))
+  (:diminish)
+  )
 
 (setup imenu-list
   (:doc "A automatically updated buffer with imenu entries.")
@@ -961,17 +900,22 @@ hljs.highlightElement(codeElement);
   (:option imenu-list-focus-after-activation t
            imenu-list-position 'left
            imenu-list-size 0.2)
-  (defun imenu-list--truncate-line (&rest _)
+  (defun dust/imenu-list--truncate-line (&rest _)
     (with-current-buffer (imenu-list-get-buffer-create)
       (setq-local truncate-lines t)))
-  (:hooks imenu-list-after-jump recenter-top-bottom
-          imenu-list-update imenu-list--truncate-line))
+  (:after imenu-list
+    (:with-hook imenu-list-after-jump-hook
+      (:hook recenter-top-bottom))
+    (:with-hook imenu-list-update-hook
+      (:hook dust/imenu-list--truncate-line)))
+  )
 
+;; TODO
 (setup indent-guide
   (:doc "Show vertical lines to guide indentation")
   (:url "indent-guide" "https://github.com/zk-phi/indent-guide")
   (:autoload indent-guide-mode)
-  (:diminish indent-guide-mode nil indent-guide)
+  (:diminish)
   (:hook-into prog-mode)
   (:option indent-guide-recursive t)
   (:after indent-guide
@@ -983,19 +927,19 @@ hljs.highlightElement(codeElement);
   (:doc "Emacs major mode for editing yuck configuration files")
   (:url "yuck-mode" "https://github.com/mmcjimsey26/yuck-mode")
   (:autoload yuck-mode)
-  (:add-to-list auto-mode-alist '("\\.\\(yuck\\)\\'" . yuck-mode)))
+  (:file-match "\\.\\(yuck\\)\\'"))
 
 (setup sxhkd-mode
   (:doc "A major mode for editing sxhkdrc")
   (:url "sxhkd-mode" "https://github.com/xFA25E/sxhkd-mode")
   (:autoload sxhkd-mode)
-  (:add-to-list auto-mode-alist `(,(rx "sxhkdrc" string-end) . sxhkd-mode)))
+  (:file-match (rx "sxhkdrc" string-end)))
 
 (setup jinja2-mode
   (:doc "Jinja2 mode for emacs")
   (:url "jinja2-mode" "https://github.com/paradoxxxzero/jinja2-mode")
   (:autoload jinja2-mode)
-  (:add-to-list auto-mode-alist `("\\.\\(jinja2\\)\\'" . jinja2-mode)))
+  (:file-match "\\.\\(jinja2\\)\\'"))
 
 (setup tempel
   (:doc "A tiny template package for Emacs")
@@ -1015,15 +959,7 @@ hljs.highlightElement(codeElement);
                       completion-at-point-functions)))
   (:with-function tempel-setup-capf
     (:hook-into conf-mode
-                prog-mode))
-  )
-
-(setup basic
-  (setq default-directory user-home-directory)
-  )
+                prog-mode)))
 
 (provide 'setup-all)
 ;;; setup-all.el ends
-
-
-

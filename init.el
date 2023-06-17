@@ -54,55 +54,18 @@ SCRIPT is the temporary location of shell script."
   :documentation "Document for the setup package."
   :repeatable t)
 
-(setup-define :defer
-  (lambda (&optional time)
-    `(run-with-idle-timer ,(or time 1) nil
-                          (lambda () (require ',(setup-get 'feature)))))
-  :documentation "Delay loading the feature until a certain amount of idle time has passed.")
-
-(setup-define :hooks
-  (lambda (slot func)
-    `(add-hook (intern (concat ,(symbol-name slot)
-                               "-hook"))
-               #',func))
-  :documentation "Add pairs of hooks."
-  :repeatable t)
-
-(setup-define :load-after
-    (lambda (features &rest body)
-      (let ((body `(progn
-                     (require ',(setup-get 'feature))
-                     ,@body)))
-        (dolist (feature (if (listp features)
-                             (nreverse features)
-                           (list features)))
-          (setq body `(with-eval-after-load ',feature ,body)))
-        body))
-  :documentation "Load the current feature after FEATURES."
-  :indent 1)
-
-(setup-define :add-to-list
-  (lambda (lst &rest items)
-    (let (body)
-      (dolist (item items)
-        (push `(add-to-list ',lst ,item) body))
-      (cons 'progn (reverse body))))
-  :documentation "Load the current feature after FEATURES."
-  :debug '(sexp &rest sexp)
-  :indent 1)
-
 (setup-define :load-path
-  (lambda (object)
-    `(add-to-list 'load-path ,object))
+  (lambda (path)
+    (when (and (stringp path)
+               (not (file-name-absolute-p path)))
+      (let ((guess-path (expand-file-name
+                         path
+                         (expand-file-name (format "%s" (setup-get 'feature))
+                                           user-module-directory))))
+        (when (file-exists-p guess-path)
+          (setq path guess-path))))
+    `(add-to-list 'load-path ,path))
   :documentation "Update load-path."
-  :repeatable t)
-
-(setup-define :custom
-  (lambda (var val)
-    `(customize-set-variable ',var ,val))
-  :documentation "Customize variables."
-  :debug '(sexp form)
-  ;; :after-loaded t
   :repeatable t)
 
 (setup-define :autoload
@@ -113,16 +76,22 @@ SCRIPT is the temporary location of shell script."
                 func)))
       `(unless (fboundp (quote ,fn))
          (autoload (function ,fn) ,(symbol-name (setup-get 'feature)) nil t))))
-  :documentation "Autoload COMMAND if not already bound."
+  :documentation "Autoload COMMAND if it is not already bound."
   :repeatable t
   :signature '(FUNC ...))
 
 (setup-define :after
-  (lambda (feature &rest body)
-    `(with-eval-after-load ',feature
-       ,@body))
-  :documentation "Eval BODY after FEATURE."
-  :indent 1)
+  (lambda (features &rest body)
+    (let (bodies)
+      (dolist (feature (if (listp features) features (list features)))
+        (push `(:with-feature ,feature
+                 (with-eval-after-load ',feature
+                   ,@body))
+              bodies))
+      (macroexp-progn (nreverse bodies))))
+  :documentation "Eval BODY after FEATURES.
+If FEATURES is a list, apply BODY to all elements inside."
+  :indent 0)
 
 (setup-define :modalka
   (lambda (key command)
@@ -153,12 +122,12 @@ The whole is wrapped within a `with-eval-after-load'."
   :indent 1)
 
 (setup-define :diminish
-  (lambda (key &optional val after)
-    (let ((-macro (if after
-                      `(with-eval-after-load ',after)
-                    '(progn))))
-      (-snoc -macro `(diminish ',key ,val))))
-  :documentation "Bind KEY to COMMAND on Modalka Map.")
+  (lambda (&optional val)
+    (let ((mode (setup-get 'mode)))
+      (when mode
+        `(diminish ',mode ,val))))
+  :documentation "Bind KEY to COMMAND on Modalka Map."
+  :after-loaded t)
 
 (setup-define :url
   (lambda (pkg url)
@@ -173,9 +142,8 @@ The whole is wrapped within a `with-eval-after-load'."
   :documentation "Unconditionally abort the evaluation of the current body.")
 
 ;;; Modules
-(setup cl-lib
-  (:doc "Common Lisp Library")
-  (:require cl-lib))
+(setup (:package cl-lib)
+  (:doc "Common Lisp Library"))
 
 (setup dash
   (:doc "A modern list API for Emacs.")
@@ -196,8 +164,9 @@ The whole is wrapped within a `with-eval-after-load'."
   (:doc "Hiding or abbreviation of the mode lighters of minor-modes.")
   (:url "diminish" "https://github.com/myrjola/diminish.el")
   (:require diminish)
-  (:diminish overwrite-mode)
-  (:diminish eldoc-mode nil eldoc))
+  (:with-feature eldoc
+    (:diminish))
+  )
 
 (setup all-the-icons
   (:doc "A collection of various Icon Fonts within Emacs")
@@ -221,17 +190,16 @@ The whole is wrapped within a `with-eval-after-load'."
   ;;     (no-littering-expand-var-file-name  "eln-cache/"))))
   )
 
-(setup modalka-mode
+(setup modalka
   (:doc "A building kit to help switch to modal editing in Emacs.")
   (:url "modalka" "https://github.com/mrkkrp/modalka")
   (:require modalka)
-  (:diminish modalka-mode)
+  (:diminish)
   (:hook-into minibuffer-mode)
   (:option modalka-global-mode 1)
   (:global "RET" newline-and-indent)
   (:bind-into messages-buffer-mode-map "q" quit-window)
 
-  
   ;; cursor's movement
   (:modalka "C-h" backward-char
             "C-j" next-line
@@ -286,57 +254,62 @@ The whole is wrapped within a `with-eval-after-load'."
   (set-terminal-coding-system 'utf-8-unix)
   (prefer-coding-system 'utf-8))
 
-(setup editing-system
-  (:doc "Editing-System settings")
+
+(setup simple
+  (:doc "Basic editing commands for Emacs")
   (:option global-visual-line-mode 1
-           delete-selection-mode 1
-           ;; electric-pair-mode 1
            indent-tabs-mode nil
            tab-width 4)
-  (fset 'yes-or-no-p 'y-or-n-p)
-  (:diminish visual-line-mode)
   
-  (setup mwim
-    (:doc "Operations of Cursor moving")
-    (:url "mwim" "https://github.com/alezost/mwim.el")
-    (:require mwim)
-    (:modalka "C-a" mwim-beginning-of-code-or-line
-              "C-b" mwim-end-of-code-or-line))
+  (:with-mode visual-line-mode
+    (:diminish))
 
-  (setup phi-search
-    (:doc "Another incremental search & replace")
-    (:url "phi-search" "https://github.com/zk-phi/phi-search")
-    (:require phi-search phi-replace)
-    ;; phi-search
-    (:modalka "C-." phi-search
-              "C-," phi-search-backward)
-    (:option phi-search-limit 10000)
-    ;; phi-replace
-    (:modalka "C-f C-r" phi-replace-query))
+  (fset 'yes-or-no-p 'y-or-n-p))
 
-  (setup autorevert
-    (:doc "Revert buffers when files on disk change")
-    (:defer 1)
-    (:option global-auto-revert-mode 1))
+(setup delsel
+  (:doc "Delete selection if you insert")
+  (:option delete-selection-mode 1))
 
-  (setup savehist
-    (:doc "Save minibuffer history")
-    (:defer 1)
-    (:option savehist-additional-variables '(mark-ring
-                                             global-mark-ring
-                                             search-ring
-                                             regexp-search-ring
-                                             extended-command-history)
-             savehist-autosave-interval 300
-             history-length 1000
-             kill-ring-max 300
-             history-delete-duplicates t)
-    (:option savehist-mode 1))
+(setup mwim
+  (:doc "Operations of Cursor moving")
+  (:url "mwim" "https://github.com/alezost/mwim.el")
+  (:require mwim)
+  (:modalka "C-a" mwim-beginning-of-code-or-line
+            "C-b" mwim-end-of-code-or-line))
 
-  (setup saveplace
-    (:doc "automatically save place in files")
-    (:defer 1)
-    (:option save-place-mode 1)))
+(setup phi-search
+  (:doc "Another incremental search & replace")
+  (:url "phi-search" "https://github.com/zk-phi/phi-search")
+  (:require phi-search phi-replace)
+  ;; phi-search
+  (:modalka "C-." phi-search
+            "C-," phi-search-backward)
+  (:option phi-search-limit 10000)
+  ;; phi-replace
+  (:modalka "C-f C-r" phi-replace-query))
+
+(setup autorevert
+  (:doc "Revert buffers when files on disk change")
+  (:option global-auto-revert-mode 1))
+
+(setup savehist
+  (:doc "Save minibuffer history")
+  (:option savehist-additional-variables
+           '(mark-ring
+             global-mark-ring
+             search-ring
+             regexp-search-ring
+             extended-command-history)
+           
+           savehist-autosave-interval 300
+           history-length 1000
+           kill-ring-max 300
+           history-delete-duplicates t)
+  (:option savehist-mode 1))
+
+(setup saveplace
+  (:doc "automatically save place in files")
+  (:option save-place-mode 1))
 
 (setup theme
   (:doc "theme settings")
@@ -366,7 +339,7 @@ The whole is wrapped within a `with-eval-after-load'."
   (:doc "RIME input method in Emacs")
   (:url "rime" "https://github.com/DogLooksGood/emacs-rime"
         "posframe" "https://github.com/tumashu/posframe")
-  (:custom default-input-method "rime")
+  (:option default-input-method "rime")
   (:require rime)
   (:after rime
     (defun my-predicate-punctuation-after-space-cc-p ()
@@ -389,8 +362,9 @@ The whole is wrapped within a `with-eval-after-load'."
                rime-predicate-org-in-src-block-p))
     )
   (:modalka "C-<SPC>" toggle-input-method)
-  ;; (:hooks kill-emacs rime-lib-finalize)
-  )
+  (:with-hook input-method-activate-hook
+    (:hook (lambda () (add-hook 'kill-emacs-hook #'rime-lib-finalize)))
+    ))
 
 (setup simpleclip
   (:doc "Simplified access to the system clipboard in Emacs.")
@@ -453,9 +427,13 @@ The whole is wrapped within a `with-eval-after-load'."
 (setup smartparens
   (:doc "A minor mode for dealing with pairs in Emacs.")
   (:url "smartparens" "https://github.com/Fuco1/smartparens")
-  (:require smartparens-config)
-  (:diminish smartparens-mode)
-  (:hooks prog-mode turn-on-smartparens-strict-mode)
+  
+  (setup (:require smartparens-config)
+    (:with-mode smartparens-mode
+      (:diminish)))
+  
+  (:with-mode turn-on-smartparens-strict-mode
+    (:hook-into prog-mode))
   (:option smartparens-global-mode 1)
   (:bind-into smartparens-mode-map
     "M-a" sp-beginning-of-sexp
@@ -482,16 +460,16 @@ The whole is wrapped within a `with-eval-after-load'."
   (:doc "Enhencements of minibuffer,
 based on vertico, orderless, marginalia, embark and consult")
 
-  (:hooks minibuffer-setup
-          (lambda ()
-            (when (eq this-command 'eval-expression)
-              (corfu-mode 1)
-              (smartparens-mode 1))))
+  (:with-hook minibuffer-setup-hook
+    (:hook (lambda ()
+             (when (eq this-command 'eval-expression)
+               (corfu-mode 1)
+               (smartparens-mode 1)))))
 
   (setup vertico
     (:doc "a performant and minimalistic vertical completion UI")
     (:url "vertico" "https://github.com/minad/vertico")
-    (:load-path (f-expand "vertico/extensions" user-module-directory))
+    (:load-path "extensions")
     (:require vertico vertico-directory vertico-mouse)
     (:option vertico-scroll-margin 0
              vertico-cycle t
@@ -522,7 +500,7 @@ based on vertico, orderless, marginalia, embark and consult")
     (:url "marginalia" "https://github.com/minad/marginalia"
           "all-the-icons-completion" "https://github.com/iyefrat/all-the-icons-completion")
     (:require marginalia all-the-icons-completion)
-    (:hooks marginalia-mode all-the-icons-completion-marginalia-setup)
+    (:hook all-the-icons-completion-marginalia-setup)
     (:option marginalia-mode 1))
 
   (setup embark
@@ -553,41 +531,30 @@ based on vertico, orderless, marginalia, embark and consult")
   (:doc "Corfu enhances in-buffer completion with a small completion popup.")
   (:url "corfu" "https://github.com/minad/corfu"
         "kind-all-the-icons" "https://github.com/Hirozy/kind-all-the-icons")
-  (:load-path (f-expand "corfu/extensions" user-module-directory))
+  (:load-path "extensions")
   (:autoload corfu-mode)
-
-  (:with-feature corfu-popupinfo
-    (:autoload corfu-popupinfo-mode)
-    (:hook-into corfu-mode))
-
-  (:with-feature corfu-history
-    (:autoload corfu-history-mode)
-    (:hook-into corfu-mode))
-  
+  (:also-load corfu-popupinfo corfu-history kind-all-the-icons)
   (:option tab-always-indent 'complete
            corfu-auto t
            corfu-auto-delay 0
            corfu-auto-prefix 1
            corfu-popupinfo-delay 0)
-
-  (:after corfu
-    (:bind-into corfu-map
+  (:bind-into corfu-map
     "C-r" corfu-scroll-down
     "C-e" corfu-scroll-up
     "C-j" corfu-next
     "C-k" corfu-previous
     "M-n" corfu-popupinfo-scroll-up
-    "M-p" corfu-popupinfo-scroll-down)
-    
-    (:require kind-all-the-icons)
-    (:add-to-list corfu-margin-formatters 'kind-all-the-icons-margin-formatter)
-    )
-  
+    "M-p" corfu-popupinfo-scroll-down)  
+  (:after corfu
+    (:option (append corfu-margin-formatters) 'kind-all-the-icons-margin-formatter))
+  (:hook corfu-popupinfo-mode corfu-history-mode)
   (:hook-into prog-mode ielm-mode)
   )
 
 (setup eaf
   (:doc "A framework that revolutionizes the graphical capabilities of Emacs.")
+  (:disabled)
   (:url "emacs-application-framework" "https://github.com/emacs-eaf/emacs-application-framework")
   (:require eaf))
 
@@ -600,27 +567,20 @@ based on vertico, orderless, marginalia, embark and consult")
 
   (defun setup-terminal ()
     (require 'setup-vterm)
-    (vterm)
-    )
+    (vterm))
 
   (defun setup-mpc ()
     (require 'setup-mpc)
-    ;; (emms-player-mpd-connect)
-    (simple-mpc)
-    )
+    (simple-mpc)    )
 
   (defun setup-mu4e ()
     (require 'setup-mu4e)
     (mu4e)
-    (mu4e-update-mail-and-index nil)
-    )
+    (mu4e-update-mail-and-index nil))
 
   (defun setup-dirvish (&optional path)
-    (require 'setup-dirvish)
-    (message "%s" path)
-    (dirvish))
-  
-  )
+    (require 'setup-dirvish)    
+    (dirvish)))
 
 (provide 'init)
 ;;; init.el ends

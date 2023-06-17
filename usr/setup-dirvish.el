@@ -3,16 +3,19 @@
 (setup dirvish
   (:doc "An improved version of the Emacs inbuilt package Dired")
   (:url "dirvish" "https://github.com/alexluigit/dirvish")
-  (:load-path (f-expand "dirvish/extensions" user-module-directory))
-  (:require dirvish dirvish-icons dirvish-emerge
-            dirvish-quick-access dirvish-subtree)
-  (:custom dirvish-quick-access-entries
+  (:require dirvish)
+  (:load-path "extensions")
+  (:also-load dirvish-icons
+              dirvish-emerge
+              dirvish-quick-access
+              dirvish-subtree)
+  (:option dirvish-quick-access-entries
            '(("h" "~/")
              ("e" "~/.emacs.d/")
              ("g" "~/gh-repo/")
              ("n" "~/Note/")
              ("G" "~/.emacs.d/etc/gnus/")))
-  (defun dirvish--truncate-line (&rest _)
+  (defun dust/dirvish--truncate-line (&rest _)
     (setq-local truncate-lines t))
   (dirvish-emerge-define-predicate is-dir
     "If item is a directory"
@@ -21,7 +24,6 @@
            dirvish-attributes '(subtree-state all-the-icons file-size)
            delete-by-moving-to-trash t
            dirvish-mode-line-height 21
-           ;; dirvish-default-layout '(1 0.3 0.1)
            dired-listing-switches
            "-l --almost-all --human-readable --group-directories-first --no-group --time-style=iso"
            dirvish-emerge-groups
@@ -37,10 +39,12 @@
              ("Python" (extensions "py"))
              ("Files" (regex . ".*"))))
   (:option dirvish-override-dired-mode 1)
-  (:hooks dirvish-find-entry dirvish--truncate-line
-          dirvish-setup dirvish-emerge-mode)
+  (:with-hook dirvish-find-entry-hook
+    (:hook dust/dirvish--truncate-line))
+  (:with-mode dirvish-emerge-mode
+    (:hook-into dirvish-setup))
   (:modalka "C-x C-d" dirvish)
-  (:bind-into-after dirvish-mode-map dirvish
+  (:bind-into dirvish-mode-map
     "a" dirvish-quick-access
     "j" dired-next-line
     "k" dired-previous-line
@@ -49,9 +53,7 @@
     "n" dirvish-emerge-next-group
     "p" dirvish-emerge-previous-group
     "TAB" dirvish-subtree-toggle
-    "M-t" dirvish-layout-toggle
-    "SPC" dired-find-file)
-  )
+    "M-t" dirvish-layout-toggle))
 
 (provide 'setup-dirvish)
 ;;; setup-dirvish.el ends
