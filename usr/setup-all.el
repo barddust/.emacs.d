@@ -3,7 +3,8 @@
 (setup dirvish
   (:doc "An improved version of the Emacs inbuilt package Dired")
   ;; setup from application
-  (:require setup-dirvish))
+  (:require setup-dirvish)
+  (:option dirvish-default-layout nil))
 
 (setup cape
   (:doc "Completion At Point Extensions")
