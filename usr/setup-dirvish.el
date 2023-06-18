@@ -1,8 +1,7 @@
 ;;; setup-dirvish.el -*- lexical-binding: t; -*-
 
-(setup dirvish
+(setup (:git dirvish "https://github.com/alexluigit/dirvish")
   (:doc "An improved version of the Emacs inbuilt package Dired")
-  (:url "dirvish" "https://github.com/alexluigit/dirvish")
   (:require dirvish)
   (:load-path "extensions")
   (:also-load dirvish-icons

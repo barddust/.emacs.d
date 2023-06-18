@@ -1,14 +1,11 @@
 ;;; setup-all.el -*- lexical-binding: t; -*-
 
-(setup dirvish
-  (:doc "An improved version of the Emacs inbuilt package Dired")
-  ;; setup from application
-  (:require setup-dirvish)
+(setup (:require setup-dirvish)
+  (:doc "setup from application")
   (:option dirvish-default-layout nil))
 
-(setup cape
+(setup (:git cape "https://github.com/minad/cape")
   (:doc "Completion At Point Extensions")
-  (:url "cape" "https://github.com/minad/cape")
   (:require cape)
   (:option (append completion-at-point-functions) 'cape-dabbrev
            (append completion-at-point-functions) 'cape-file))
@@ -58,9 +55,8 @@
                         `(:line-width -1
                           :color ,(face-attribute 'default :foreground))))
 
-(setup rainbow-delimiters
+(setup (:git rainbow-delimiters "https://github.com/Fanael/rainbow-delimiters")
     (:doc "Highlight delimiters according to their depth.")
-    (:url "rainbow-delimiters" "https://github.com/Fanael/rainbow-delimiters")
     (:autoload rainbow-delimiters-mode)
     (:hook-into prog-mode))
 
@@ -117,10 +113,9 @@
                 "M-f" ibuffer-forward-line)
     (:modalka "C-x C-b" ibuffer))
 
-(setup jieba
+(setup (:git jieba "https://github.com/cireu/jieba.el"
+             jsonrpc "https://github.com/paritytech/jsonrpc/")
   (:doc "Things about selection and deletion supporting CN words")
-  (:url "jsonrpc" "https://github.com/paritytech/jsonrpc/"
-        "jieba" "https://github.com/cireu/jieba.el")
   (:require jieba)
   (:diminish)
   (defun select-word-at-point ()
@@ -245,7 +240,6 @@
 (setup eglot
   (:doc "A emacs LSP client")
   (:autoload eglot-ensure)
-  
   (:with-function eglot-ensure
     (:hook-into python-mode
                 yaml-mode
@@ -255,9 +249,8 @@
                 latex-mode))
   (:option eldoc-echo-area-use-multiline-p 1))
 
-(setup denote
+(setup (:git denote "https://github.com/protesilaos/denote")
   (:doc "A simple note-taking tool for Emacs")
-  (:url "denote" "https://github.com/protesilaos/denote")
   (:require denote)
   (defun denote-template ()
     "Create note while prompting for a subdirectory.
@@ -642,9 +635,8 @@ set to '(subdirectory title keywords)."
                                '((python . t)
                                  (lisp . t))))
 
-(setup org-modern
+(setup (:git org-modern "https://github.com/minad/org-modern")
   (:doc "A modern style for Org buffers")
-  (:url "org-modern" "https://github.com/minad/org-modern")
   (:autoload global-org-modern-mode)
   (:option org-hide-emphasis-markers t
            org-modern-list '((?+ . "◦")
@@ -656,26 +648,23 @@ set to '(subdirectory title keywords)."
              ("DOING" :background "SteelBlue" :foreground "white" :weight bold)
              ("WAIT" :background "orange" :foreground "white" :weight bold)
              ("DONE" :background "SeaGreen4" :foreground "white" :weight bold)
-             ("CANCELED" :foreground ,(face-attribute 'fringe
-                                                      :foreground)
+             ("CANCELED"
+              :foreground ,(face-attribute 'fringe :foreground)
               :weight bold
-              :strike-through ,(face-attribute 'fringe
-                                               :foreground))))
+              :strike-through ,(face-attribute 'fringe :foreground))))
   (:with-mode global-org-modern-mode
     (:hook-into org-mode)))
 
-(setup olivetti
+(setup (:git olivetti "https://github.com/rnkn/olivetti")
   (:doc "A simple Emacs minor mode for a nice writing environment.")
-  (:url "olivetti" "https://github.com/rnkn/olivetti")
   (:diminish)
   (:autoload olivetti-mode)
   (:option olivetti-body-width 120)
   (:hook-into org-mode))
 
-(setup org-pomodoro
+(setup (:git org-pomodoro "https://github.com/marcinkoziej/org-pomodoro"
+             alert "https://github.com/jwiegley/alert")
   (:doc "Basic support for Pomodoro technique in Org Mode.")
-  (:url "org-pomodoro" "https://github.com/marcinkoziej/org-pomodoro")
-  (:url "alert" "https://github.com/jwiegley/alert")
   (:autoload org-pomodoro)
   (:option org-pomodoro-start-sound-p t
            org-pomodoro-length 25
@@ -699,10 +688,9 @@ set to '(subdirectory title keywords)."
   (:option org-beamer-frame-level 2
            org-beamer-outline-frame-title "Content"))
 
-(setup org-drill
+(setup (:git org-drill "https://github.com/louietan/org-drill"
+             persist "https://github.com/emacs-straight/persist")
   (:doc "An Spaced Repetition System")
-  (:url "persist" "https://github.com/emacs-straight/persist"
-        "org-drill" "https://github.com/louietan/org-drill")
   (:autoload org-drill)
   (:option drill-directory "~/Drill/"
            org-drill-maximum-items-per-session 40
@@ -720,9 +708,8 @@ set to '(subdirectory title keywords)."
     (org-drill))
   (defalias 'destructuring-bind 'cl-destructuring-bind))
 
-(setup org-journal
+(setup (:git org-journal "https://github.com/bastibe/org-journal")
   (:doc "A simple personal diary / journal using in Emacs.")
-  (:url "org-journal" "https://github.com/bastibe/org-journal")
   (:autoload org-journal-new-entry)
   (defun org-journal-file-header-func (time)
     "Custom function to create journal header."
@@ -758,23 +745,20 @@ set to '(subdirectory title keywords)."
     (org-journal-new-entry t))
   (:modalka "C-c C-j" dust/org-journal-new-journal))
 
-(setup yaml-mode
+(setup (:git yaml-mode "https://github.com/yoshiki/yaml-mode")
   (:doc "Support for YAML Language")
-  (:url "yaml-mode" "https://github.com/yoshiki/yaml-mode")
   (:autoload yaml-mode)
   (:file-match "\\.\\(yml\\|yaml\\)\\'"))
 
-(setup markdown-mode
+(setup (:git markdown-mode "https://github.com/jrblevin/markdown-mode")
   (:doc "Support for Markdown")
-  (:url "markdown-mode" "https://github.com/jrblevin/markdown-mode")
   (:autoload markdown-mode)
   (:option markdown-command "multimarkdown")
   (:file-match "\\.md\\'"))
 
-(setup excerpt
+(setup (:git excerpt "https://github.com/fingerknight/excerpt.el"
+             emacsql "https://github.com/magit/emacsql")
   (:doc "Excerpt management")
-  (:url "emacsql" "https://github.com/magit/emacsql"
-        "excerpt" "https://github.com/fingerknight/excerpt.el")
   (:autoload excerpt)
   (:option excerpt-dir (no-littering-expand-var-file-name "excerpt")))
 
@@ -884,18 +868,14 @@ hljs.highlightElement(codeElement);
                            "mermaid.initialize({theme: 'neutral', securityLevel: 'loose'});\n"
                            "</script>"))))))
 
-(setup elisp-def
+(setup (:git elisp-def "https://github.com/Wilfred/elisp-def")
   (:doc "Go to the definition of the symbol at point.")
-  (:url "elisp-def" "https://github.com/Wilfred/elisp-def"
-        "phi-search" "https://github.com/zk-phi/phi-search")
   (:autoload elisp-def-mode)
   (:hook-into emacs-lisp-mode ielm-mode)
-  (:diminish)
-  )
+  (:diminish))
 
-(setup imenu-list
-  (:doc "A automatically updated buffer with imenu entries.")
-  (:url "imenu-list" "https://github.com/bmag/imenu-list")
+(setup (:git imenu-list "https://github.com/bmag/imenu-list")
+  (:doc "A automatically updated buffer with imenu entries.")  
   (:autoload imenu-list-smart-toggle)
   (:modalka "C-'" imenu-list-smart-toggle)
   (:option imenu-list-focus-after-activation t
@@ -912,9 +892,8 @@ hljs.highlightElement(codeElement);
   )
 
 ;; TODO
-(setup indent-guide
+(setup (:git indent-guide "https://github.com/zk-phi/indent-guide")
   (:doc "Show vertical lines to guide indentation")
-  (:url "indent-guide" "https://github.com/zk-phi/indent-guide")
   (:autoload indent-guide-mode)
   (:diminish)
   (:hook-into prog-mode)
@@ -924,28 +903,24 @@ hljs.highlightElement(codeElement);
                          (face-attribute 'font-lock-comment-face
                                          :foreground))))
 
-(setup yuck-mode
+(setup (:git yuck-mode "https://github.com/mmcjimsey26/yuck-mode")
   (:doc "Emacs major mode for editing yuck configuration files")
-  (:url "yuck-mode" "https://github.com/mmcjimsey26/yuck-mode")
   (:autoload yuck-mode)
   (:file-match "\\.\\(yuck\\)\\'"))
 
-(setup sxhkd-mode
+(setup (:git sxhkd-mode "https://github.com/xFA25E/sxhkd-mode")
   (:doc "A major mode for editing sxhkdrc")
-  (:url "sxhkd-mode" "https://github.com/xFA25E/sxhkd-mode")
   (:autoload sxhkd-mode)
   (:file-match (rx "sxhkdrc" string-end)))
 
-(setup jinja2-mode
+(setup (:git jinja2-mode "https://github.com/paradoxxxzero/jinja2-mode")
   (:doc "Jinja2 mode for emacs")
-  (:url "jinja2-mode" "https://github.com/paradoxxxzero/jinja2-mode")
   (:autoload jinja2-mode)
   (:file-match "\\.\\(jinja2\\)\\'"))
 
-(setup tempel
+(setup (:git tempel "https://github.com/minad/tempel"
+             tempel-collection "https://github.com/Crandel/tempel-collection")
   (:doc "A tiny template package for Emacs")
-  (:url "tempel" "https://github.com/minad/tempel"
-        "tempel-collection" "https://github.com/Crandel/tempel-collection")
   (defun tempel-setup-capf ()
     ;; Add the Tempel Capf to `completion-at-point-functions'.
     ;; `tempel-expand' only triggers on exact matches. Alternatively use

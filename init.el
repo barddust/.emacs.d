@@ -1,27 +1,31 @@
 ;;; init.el -*- lexical-binding: t; -*-
 
 ;;; Packages
-(defun dust/package-installed (pkg)
+(defun dust/package-installed-p (pkg)
   "If packages is installed"
-  (file-exists-p (expand-file-name pkg user-module-directory)))
+  
+  (file-exists-p (expand-file-name
+                  (if (stringp pkg)
+                      pkg
+                    (format "%s" pkg))
+                  user-module-directory)))
 
 (defun dust/package-install (pkg url)
   "Install pacakges by Git"
   (let ((dir (expand-file-name pkg user-module-directory)))
-    (unless (dust/package-installed dir)
-      (message "Fetching %s..." pkg)
-      (message "%s"
-               (shell-command-to-string
-                (format "git --no-pager clone \"%s\" \"%s\""
-                        url
-                        dir)))
-      (message "Fetched %s." pkg))))
+    (message "Fetching %s..." pkg)
+    (message "%s"
+             (shell-command-to-string
+              (format "git --no-pager clone \"%s\" \"%s\""
+                      url
+                      dir)))
+    (message "Fetched %s." pkg)))
 
 (defun dust/packge-update (pkg &optional string)
   "Update single package.
 If STRING is non-nil, return the update COMMAND string
 especially for `dust/package-update-all'."
-  (if (dust/package-installed pkg)
+  (if (dust/package-installed-p pkg)
       (let ((cmd (format "echo \"Updating: %s...\"\ncd \"%s\"\ngit pull\n"
                          pkg pkg)))
         (if string
@@ -42,8 +46,15 @@ SCRIPT is the temporary location of shell script."
       (insert "echo \"DONE.\""))
     (async-shell-command (format "bash %s" tmp-script))))
 
+;; Put directory of all Modules in to environment.
+;; `:package' do this only when the package is installed.
+(dolist (path (directory-files user-module-directory
+                              t "[^.]"))
+  (add-to-list 'load-path path))
+
 ;;; SetupEl
-(dust/package-install "setup" "https://git.sr.ht/~pkal/setup")
+(unless (dust/package-installed-p 'setup)
+  (dust/package-install 'setup "https://git.sr.ht/~pkal/setup"))
 (add-to-list 'load-path (expand-file-name "setup" user-module-directory))
 
 (require 'setup)
@@ -53,6 +64,19 @@ SCRIPT is the temporary location of shell script."
     nil)
   :documentation "Document for the setup package."
   :repeatable t)
+
+(setup-define :git
+  (lambda (package url)
+    `(unless (dust/package-installed-p ',package)
+       (dust/package-install ',package ,url)
+       (add-to-list 'load-path (expand-file-name (format "%s" ',package)
+                                                 user-module-directory))))
+  :documentation "Install package by Git if it hasn't been installed yet.
+CON is a list, with package-name as first element,
+and Git repository URL as second element.
+The first PACKAGE can be used to deduce the feature context."
+  :repeatable t
+  :shorthand #'cadr)
 
 (setup-define :load-path
   (lambda (path)
@@ -101,26 +125,6 @@ If FEATURES is a list, apply BODY to all elements inside."
   :ensure '(kbd func)
   :repeatable t)
 
-(setup-define :bind-into-after
-  (lambda (feature-or-map feature &rest rest)
-    (let ((keymap (if (string-match-p "-map\\'"
-                                      (symbol-name feature-or-map))
-                      feature-or-map
-                    (intern (format "%s-map" feature-or-map))))
-          (body `(',feature with-eval-after-load)))
-      (dotimes (i (/ (length rest) 2))
-        (push `(define-key ,keymap
-                 (kbd ,(format "%s" (nth (* 2 i) rest)))
-                 #',(nth (1+ (* 2 i)) rest))
-              body))
-      (reverse body)))
-  :documentation "Bind into keys into the map of FEATURE-OR-MAP after FEATURE.
-The arguments REST are handled as by `:bind'.
-The whole is wrapped within a `with-eval-after-load'."
-  :debug '(sexp sexp &rest form sexp)
-  :ensure '(nil nil &rest kbd func)
-  :indent 1)
-
 (setup-define :diminish
   (lambda (&optional val)
     (let ((mode (setup-get 'mode)))
@@ -129,70 +133,49 @@ The whole is wrapped within a `with-eval-after-load'."
   :documentation "Bind KEY to COMMAND on Modalka Map."
   :after-loaded t)
 
-(setup-define :url
-  (lambda (pkg url)
-    `(let ((dir (expand-file-name ,pkg user-module-directory)))
-       (dust/package-install ,pkg ,url)
-       (add-to-list 'load-path dir)))
-  :documentation "Url to fetch packages"
-  :repeatable t)
-
 (setup-define :disabled
   #'setup-quit
   :documentation "Unconditionally abort the evaluation of the current body.")
 
 ;;; Modules
-(setup (:package cl-lib)
+(setup (:require cl-lib)
   (:doc "Common Lisp Library"))
 
-(setup dash
+(setup (:git dash "https://github.com/magnars/dash.el")
   (:doc "A modern list API for Emacs.")
-  (:url "dash" "https://github.com/magnars/dash.el")
   (:require dash))
 
-(setup s
+(setup (:git s "https://github.com/magnars/s.el")
   (:doc "String manipulation library")
-  (:url "s" "https://github.com/magnars/s.el")
   (:require s))
 
-(setup f
+(setup (:git f "https://github.com/rejeep/f.el")
   (:doc "Modern APIs for working with files and directories")
-  (:url "f" "https://github.com/rejeep/f.el")
   (:require f))
 
-(setup diminish
+(setup (:git diminish "https://github.com/myrjola/diminish.el")
   (:doc "Hiding or abbreviation of the mode lighters of minor-modes.")
-  (:url "diminish" "https://github.com/myrjola/diminish.el")
   (:require diminish)
   (:with-feature eldoc
-    (:diminish))
-  )
+    (:diminish)))
 
-(setup all-the-icons
+(setup (:git all-the-icons "https://github.com/domtronn/all-the-icons.el")
   (:doc "A collection of various Icon Fonts within Emacs")
-  (:url "all-the-icons" "https://github.com/domtronn/all-the-icons.el")
   (:require all-the-icons))
 
-(setup no-littering
+(setup (:git no-littering "https://github.com/emacscollective/no-littering"
+             compat "https://github.com/emacsmirror/compat")
   (:doc "Help keeping `~/.config/emacs' clean.")
-  (:url "no-littering" "https://github.com/emacscollective/no-littering"
-        "compat" "https://github.com/emacsmirror/compat")
-  (:option no-littering-etc-directory user-config-directory
-           no-littering-var-directory user-data-directory)
   (:require no-littering)
-  (:option auto-save-file-name-transforms `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))
+  (:option no-littering-etc-directory user-config-directory
+           no-littering-var-directory user-data-directory
+           auto-save-file-name-transforms `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))
            custom-file (no-littering-expand-etc-file-name "custom.el")
            ac-comphist-file (no-littering-expand-var-file-name "ac-comphist.dat")
-           recentf-save-file (no-littering-expand-var-file-name "recentf"))
-  ;; (when (fboundp 'startup-redirect-eln-cache)
-  ;;   (startup-redirect-eln-cache
-  ;;    (convert-standard-filename
-  ;;     (no-littering-expand-var-file-name  "eln-cache/"))))
-  )
+           recentf-save-file (no-littering-expand-var-file-name "recentf")))
 
-(setup modalka
+(setup (:git modalka "https://github.com/mrkkrp/modalka")
   (:doc "A building kit to help switch to modal editing in Emacs.")
-  (:url "modalka" "https://github.com/mrkkrp/modalka")
   (:require modalka)
   (:diminish)
   (:hook-into minibuffer-mode)
@@ -240,46 +223,27 @@ The whole is wrapped within a `with-eval-after-load'."
   (:modalka "C-o" newline-and-indent-1
             "M-o" newline-and-indent-2))
 
-(setup coding-system
-  (:doc "Coding-System settings")
-  (:option locale-coding-system 'utf-8)
-  (set-language-environment "UTF-8")
-  (set-default-coding-systems 'utf-8)
-  (set-buffer-file-coding-system 'utf-8-unix)
-  (set-clipboard-coding-system 'utf-8-unix)
-  (set-file-name-coding-system 'utf-8-unix)
-  (set-keyboard-coding-system 'utf-8-unix)
-  (set-next-selection-coding-system 'utf-8-unix)
-  (set-selection-coding-system 'utf-8-unix)
-  (set-terminal-coding-system 'utf-8-unix)
-  (prefer-coding-system 'utf-8))
-
-
 (setup simple
   (:doc "Basic editing commands for Emacs")
   (:option global-visual-line-mode 1
            indent-tabs-mode nil
            tab-width 4)
-  
   (:with-mode visual-line-mode
     (:diminish))
-
   (fset 'yes-or-no-p 'y-or-n-p))
 
 (setup delsel
   (:doc "Delete selection if you insert")
   (:option delete-selection-mode 1))
 
-(setup mwim
+(setup (:git mwim "https://github.com/alezost/mwim.el")
   (:doc "Operations of Cursor moving")
-  (:url "mwim" "https://github.com/alezost/mwim.el")
   (:require mwim)
   (:modalka "C-a" mwim-beginning-of-code-or-line
             "C-b" mwim-end-of-code-or-line))
 
-(setup phi-search
+(setup (:git phi-search "https://github.com/zk-phi/phi-search")
   (:doc "Another incremental search & replace")
-  (:url "phi-search" "https://github.com/zk-phi/phi-search")
   (:require phi-search phi-replace)
   ;; phi-search
   (:modalka "C-." phi-search
@@ -313,34 +277,28 @@ The whole is wrapped within a `with-eval-after-load'."
 
 (setup theme
   (:doc "theme settings")
-  (:url "dracula-theme" "https://github.com/dracula/emacs")
+  (:git dracula-theme "https://github.com/dracula/emacs")
   (:require dracula-theme)
   (load-theme 'dracula t))
 
 (setup font
   (:doc "Fonts setting")
-  
   ;; default fonts
   (set-face-attribute 'default nil
                       :font (font-spec :family "FantasqueSansM Nerd Font"
                                        :size 20))
-
   ;; unicode
   (set-fontset-font t 'unicode
                     (font-spec :family "WenQuanYi Zen Hei Mono"))
-
   ;; cn
   (set-fontset-font t '(#x4e00 . #x9fff)
-                    (font-spec :family "思源宋体"))
+                    (font-spec :family "思源宋体")))
 
-  )
-
-(setup rime
+(setup (:git rime "https://github.com/DogLooksGood/emacs-rime"
+             posframe "https://github.com/tumashu/posframe")
   (:doc "RIME input method in Emacs")
-  (:url "rime" "https://github.com/DogLooksGood/emacs-rime"
-        "posframe" "https://github.com/tumashu/posframe")
-  (:option default-input-method "rime")
   (:require rime)
+  (:option default-input-method "rime")
   (:after rime
     (defun my-predicate-punctuation-after-space-cc-p ()
       (let* ((start (save-excursion
@@ -359,16 +317,13 @@ The whole is wrapped within a `with-eval-after-load'."
              '(rime-predicate-prog-in-code-p
                my-predicate-punctuation-after-space-cc-p
                rime-predicate-after-alphabet-char-p
-               rime-predicate-org-in-src-block-p))
-    )
+               rime-predicate-org-in-src-block-p)))
   (:modalka "C-<SPC>" toggle-input-method)
   (:with-hook input-method-activate-hook
-    (:hook (lambda () (add-hook 'kill-emacs-hook #'rime-lib-finalize)))
-    ))
+    (:hook (lambda () (add-hook 'kill-emacs-hook #'rime-lib-finalize)))))
 
-(setup simpleclip
+(setup (:git simpleclip "https://github.com/rolandwalker/simpleclip")
   (:doc "Simplified access to the system clipboard in Emacs.")
-  (:url "simpleclip" "https://github.com/rolandwalker/simpleclip")
   (:require simpleclip)
   (simpleclip-mode 1)
   (:modalka "C-w" simpleclip-copy
@@ -378,26 +333,20 @@ The whole is wrapped within a `with-eval-after-load'."
               :after
               (lambda (&rest args)
                 (when (region-active-p)
-                  (keyboard-quit))))
-  )
+                  (keyboard-quit)))))
 
-(setup helpful
+(setup (:git helpful "https://github.com/Wilfred/helpful"
+             elisp-refs "https://github.com/Wilfred/elisp-refs")
   (:doc "An alternative to the built-in Emacs help")
-  (:url "helpful" "https://github.com/Wilfred/helpful"
-        "elisp-refs" "https://github.com/Wilfred/elisp-refs")
   (:require helpful)
   (:option helpful-max-buffers 1)
   (:modalka "C-p k" helpful-key
             "C-p f" helpful-callable
             "C-p v" helpful-variable
-            "C-p t" help-with-tutorial)
-  )
+            "C-p t" help-with-tutorial))
 
 (setup window
   (:doc "Operations about windows")
-  (:url "winum" "https://github.com/deb0ch/emacs-winum")
-  (:require window winum)
-  
   ;; window
   (defun split-window-right-for-buffer (buffer)
     (interactive "bChoose buffer: \n")
@@ -408,8 +357,11 @@ The whole is wrapped within a `with-eval-after-load'."
     (select-window (split-window-below))
     (switch-to-buffer buffer))
   (:modalka "C-x 2" split-window-below-for-buffer
-            "C-x 3" split-window-right-for-buffer)
-  ;; winum
+            "C-x 3" split-window-right-for-buffer))
+
+(setup (:git winum "https://github.com/deb0ch/emacs-winum")
+  (:doc "Navigate Emacs windows and frames using numbers ")
+  (:require winum)
   (:modalka "M-0" winum-select-window-0
             "M-1" winum-select-window-1
             "M-2" winum-select-window-2
@@ -424,14 +376,11 @@ The whole is wrapped within a `with-eval-after-load'."
            winum-auto-setup-mode-line t)
   (:option winum-mode 1))
 
-(setup smartparens
+(setup (:git smartparens "https://github.com/Fuco1/smartparens")
   (:doc "A minor mode for dealing with pairs in Emacs.")
-  (:url "smartparens" "https://github.com/Fuco1/smartparens")
-  
   (setup (:require smartparens-config)
     (:with-mode smartparens-mode
       (:diminish)))
-  
   (:with-mode turn-on-smartparens-strict-mode
     (:hook-into prog-mode))
   (:option smartparens-global-mode 1)
@@ -466,59 +415,58 @@ based on vertico, orderless, marginalia, embark and consult")
                (corfu-mode 1)
                (smartparens-mode 1)))))
 
-  (setup vertico
+  (setup (:git vertico "https://github.com/minad/vertico")
     (:doc "a performant and minimalistic vertical completion UI")
-    (:url "vertico" "https://github.com/minad/vertico")
     (:load-path "extensions")
-    (:require vertico vertico-directory vertico-mouse)
+    (:require vertico)
+    (:also-load vertico-directory vertico-mouse)
     (:option vertico-scroll-margin 0
              vertico-cycle t
              vertico-resize t)
     (:option vertico-mode 1
              vertico-mouse-mode 1)
-    (:bind-into-after vertico-map vertico
-                      "RET" vertico-directory-enter
-                      "DEL" vertico-directory-delete-char
-                      "C-DEL" vertico-directory-delete-word
-                      "M-DEL" vertico-directory-up))
+    (:bind-into vertico-map
+      "RET" vertico-directory-enter
+      "DEL" vertico-directory-delete-char
+      "C-DEL" vertico-directory-delete-word
+      "M-DEL" vertico-directory-up))
 
-  (setup orderless
+  (setup (:git orderless  "https://github.com/oantolin/orderless")
     (:doc "An orderless completion style.")
-    (:url "orderless"  "https://github.com/oantolin/orderless")
     (:require orderless)
-    (:option completion-styles '( orderless
-                                  substring
-                                  partial-completion
-                                  basic)
+    (:option completion-styles '(orderless
+                                 substring
+                                 partial-completion
+                                 basic)
              completion-category-defaults nil
              completion-category-overrides nil
              completion-category-defaults nil
              completion-category-overrides '((file (styles . (partial-completion))))))
 
-  (setup marginalia
+  (setup (:git marginalia "https://github.com/minad/marginalia"
+               all-the-icons-completion "https://github.com/iyefrat/all-the-icons-completion")
     (:doc "Add marginalia to the minibuffer completions.")
-    (:url "marginalia" "https://github.com/minad/marginalia"
-          "all-the-icons-completion" "https://github.com/iyefrat/all-the-icons-completion")
-    (:require marginalia all-the-icons-completion)
+    (:require marginalia)
+    (:also-load all-the-icons-completion)
     (:hook all-the-icons-completion-marginalia-setup)
     (:option marginalia-mode 1))
 
-  (setup embark
+  (setup (:git embark "https://github.com/oantolin/embark")
     (:doc "Make it easy to choose a command to run based on what is near point")
-    (:url "embark" "https://github.com/oantolin/embark")
     (:require embark)
-    (:option prefix-help-command #'embark-prefix-help-command)
-    (add-to-list 'display-buffer-alist
-                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                   nil
-                   (window-parameters (mode-line-format . none))))
+    (:option prefix-help-command #'embark-prefix-help-command
+             
+             (append display-buffer-alist)
+             '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+               nil
+               (window-parameters (mode-line-format . none))))
     (:modalka  "C-/" embark-act
                "C-?" embark-dwim))
   
-  (setup consult
+  (setup (:git consult "https://github.com/minad/consult")
     (:doc "Search and navigation commands based on the Emacs completion function")
-    (:url "consult" "https://github.com/minad/consult")
-    (:require consult consult-imenu)
+    (:require consult)
+    (:also-load consult-imenu)
     (:modalka "C-f C-f" consult-line
               "C-f C-l" consult-goto-line
               "C-f C-m" consult-mark
@@ -527,10 +475,9 @@ based on vertico, orderless, marginalia, embark and consult")
               "C-f C-s" consult-imenu))
   )
 
-(setup corfu
+(setup (:git corfu "https://github.com/minad/corfu"
+             kind-all-the-icons "https://github.com/Hirozy/kind-all-the-icons")
   (:doc "Corfu enhances in-buffer completion with a small completion popup.")
-  (:url "corfu" "https://github.com/minad/corfu"
-        "kind-all-the-icons" "https://github.com/Hirozy/kind-all-the-icons")
   (:load-path "extensions")
   (:autoload corfu-mode)
   (:also-load corfu-popupinfo corfu-history kind-all-the-icons)
@@ -549,13 +496,12 @@ based on vertico, orderless, marginalia, embark and consult")
   (:after corfu
     (:option (append corfu-margin-formatters) 'kind-all-the-icons-margin-formatter))
   (:hook corfu-popupinfo-mode corfu-history-mode)
-  (:hook-into prog-mode ielm-mode)
-  )
+  (:hook-into prog-mode ielm-mode))
 
 (setup eaf
   (:doc "A framework that revolutionizes the graphical capabilities of Emacs.")
   (:disabled)
-  (:url "emacs-application-framework" "https://github.com/emacs-eaf/emacs-application-framework")
+  (:git emacs-application-framework "https://github.com/emacs-eaf/emacs-application-framework")
   (:require eaf))
 
 (setup application

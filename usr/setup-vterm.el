@@ -1,6 +1,5 @@
-(setup vterm
+(setup (:git "vterm" "https://github.com/akermu/emacs-libvterm")
   (:doc "A fully-fledged terminal emulator inside GNU Emacs")
-  (:url "vterm" "https://github.com/akermu/emacs-libvterm")
   (:require vterm)
   (:option vterm-buffer-name-string "vterm @ %s")
   (:hook (lambda () (modalka-mode 0)))
