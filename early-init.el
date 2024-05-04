@@ -1,4 +1,4 @@
-;;; early-init.el -*- lexical-binding: t; -*-
+;;; -*- lexical-binding: t; -*-
 
 (defconst user-home-directory
   (pcase system-type
@@ -6,34 +6,13 @@
     (otherwise "~/"))
   "User Home directory")
 
-(defconst user-data-directory
-  (expand-file-name "var" user-emacs-directory)
-  "Where to save the emacs data")
-
-(defconst user-config-directory
-  (expand-file-name "etc" user-emacs-directory)
-  "Where to save the configurations")
-
-(defconst user-module-directory
-  (expand-file-name "opt" user-emacs-directory)
-  "Where to save the modules")
-
-(defconst user-application-directory
-  (expand-file-name "usr" user-emacs-directory)
-  "Where to save the apps")
-
-;; Create directories if necessary
-(dolist (type '("data" "config" "module" "application"))
-  (let* ((var-name (intern (concat "user-" type "-directory")))
-         (dir (symbol-value var-name)))
-    (unless (file-directory-p dir)
-      (make-directory dir))))
-
 ;;; Basic settings
-;; Speed up startin
+;;
+
+;; Speed up starting
 (setq gc-cons-percentage 1.0
       gc-cons-threshold most-positive-fixnum
-      package-enable-at-startup nil
+      ;; package-enable-at-startup nil
       inhibit-compacting-font-caches t)
 
 (let ((old-file-name-handler-alist file-name-handler-alist))
@@ -47,28 +26,35 @@
           inhibit-trace nil))
   (add-hook 'emacs-startup-hook #'restore--default))
 
+(setq-default bidi-display-reordering 'left-to-right)
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq bidi-inhibit-bpa t)
+
 ;; Coding System
 (setq locale-coding-system 'utf-8)
 (set-language-environment "UTF-8")
 (set-default-coding-systems 'utf-8)
-(set-buffer-file-coding-system 'utf-8-unix)
-(set-clipboard-coding-system 'utf-8-unix)
-(set-file-name-coding-system 'utf-8-unix)
-(set-keyboard-coding-system 'utf-8-unix)
-(set-next-selection-coding-system 'utf-8-unix)
-(set-selection-coding-system 'utf-8-unix)
-(set-terminal-coding-system 'utf-8-unix)
+(set-buffer-file-coding-system 'utf-8)
+(set-clipboard-coding-system 'utf-8)
+(set-file-name-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(set-next-selection-coding-system 'utf-8)
+(set-selection-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
 
 ;; GUI
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
-(add-to-list 'default-frame-alist '(vertical-scroll-bars))
+(add-to-list 'default-frame-alist '(vertical-scroll-bars . nil))
+(add-to-list 'default-frame-alist '(horizontal-scroll-bars . nil))
 (add-to-list 'default-frame-alist '(tool-bar-lines . 0))
 (add-to-list 'default-frame-alist '(menu-bar-lines . 0))
-    
+;; (add-to-list 'default-frame-alist '(alpha-background . 90))
+
 ;; Misc
-(setq url-proxy-services '(("http" . "127.0.0.1:7890")
-                           ("https" . "127.0.0.1:7890"))
+(setq
+ ;; url-proxy-services '(("http" . "127.0.0.1:7890")
+                           ;; ("https" . "127.0.0.1:7890"))
       ring-bell-function 'ignore
       make-backup-files nil
       mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil))
@@ -78,11 +64,12 @@
       enable-recursive-minibuffers t
       frame-inhibit-implied-resize t
       ad-redefinition-action 'accept
-
       inhibit-startup-message t
       inhibit-startup-echo-area-message t
       initial-major-mode 'fundamental-mode
-      initial-scratch-message nil)
+      initial-scratch-message nil
+      initial-scratch-message nil
+      echo-keystrokes 0.25
+      custom-file (expand-file-name "custom.el" user-emacs-directory))
 
 (provide 'early-init)
-;;; early-init.el ends
