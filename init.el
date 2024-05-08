@@ -762,7 +762,9 @@ See `advice-add' for more details."
              org-tags-column 0
              org-use-sub-superscripts nil
              org-link-file-path-type 'relative
-             org-startup-truncated t)
+             org-startup-truncated t
+             org-fontify-quote-and-verse-blocks t
+             )
 
     (:bind "C-c e" org-edit-src-code
            "C-j" next-line
@@ -780,10 +782,14 @@ See `advice-add' for more details."
     (defun dust/org-at-headline-stars-p ()
       (and (looking-at org-outline-regexp) (looking-back "^\**")))
 
-    (:option org-use-speed-commands 'dust/org-at-headline-stars-p)
+    (:option org-use-speed-commands 'dust/org-at-headline-stars-p
+             (append rime-disable-predicates) 'dust/org-at-headline-stars-p)
     (setcdr (assoc "a" org-speed-commands) 'org-attach)
-    (:option (append org-speed-commands)
-             '("A" . org-archive-subtree-default-with-confirmation))
+    (setcdr (assoc "s" org-speed-commands) 'org-schedule)
+    
+    (:option (append* org-speed-commands)
+             '(("A" . org-archive-subtree-default-with-confirmation)
+               ("d" . org-deadline)))
     ))
 
 
@@ -926,14 +932,16 @@ See `advice-add' for more details."
              org-hide-emphasis-markers t
              org-pretty-entities nil
              org-ellipsis "...")
-    ;; (:face org-tag :weight 'normal :foreground "#afeeee")
+
     (:face org-modern-label :height 1.0)
     (:face org-modern-statistics
       :background  (face-attribute 'default :background)
       :box nil)
     (:face org-modern-tag :box nil)
     
-    (:option org-modern-star "*"
+    (:option org-modern-star 'replace
+             org-modern-replace-stars "*"
+             
              org-modern-checkbox '((?X . "󰄵")
                                    (?- . "󰄗")
                                    (?\s . "󰄱"))
@@ -941,17 +949,17 @@ See `advice-add' for more details."
                                    "󰪡 " "󰪢 " "󰪣 " "󰪤" "󰪥 ")
              org-modern-todo nil
              org-modern-block-name '(("src" . (" " ""))
-                                     ("quote" . (" " "")))
+                                     ("quote" . ("" "")))
              org-modern-keyword '(("title" . "  ")
                                   ("date" . "")
                                   ("filetags" . "")
-                                  ("identifier" . " ")
+                                  ("identifier" . "")
                                   ("options" . " ")
                                   ("location" . " ")
                                   ("caption" . " "))
-             org-modern-list '((?+ . " ")
-                               (?- . " ")
-                               (?* . " ")))))
+             org-modern-list '((?+ . "")
+                               (?- . "")
+                               (?* . "")))))
 
 
 (setup (:package olivetti)
@@ -1023,8 +1031,7 @@ See `advice-add' for more details."
              dust/rime-predicate-punctuation-after-space-cc-p
              rime-predicate-after-alphabet-char-p
              dust/rime-predicate-org-in-src-block-p
-             rime-predicate-org-latex-mode-p
-             dust/org-at-headline-stars-p))
+             rime-predicate-org-latex-mode-p))
 
   (:face rime-default-face :background nil)
   (:option rime-posframe-properties nil)
@@ -1393,7 +1400,9 @@ set to '(subdirectory title keywords)."
 
 (setup (:package nov)
   (:doc "Major mode for reading EPUBs in Emacs.")
-  (:file-match "\\.epub\\'"))
+  (:file-match "\\.epub\\'")
+  (:bind "<delete>" nov-scroll-down)
+  )
 
 
 (setup (:package djvu)

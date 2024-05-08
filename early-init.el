@@ -53,8 +53,8 @@
 
 ;; Misc
 (setq
- ;; url-proxy-services '(("http" . "127.0.0.1:7890")
-                           ;; ("https" . "127.0.0.1:7890"))
+ url-proxy-services '(("http" . "127.0.0.1:7890")
+                      ("https" . "127.0.0.1:7890"))
       ring-bell-function 'ignore
       make-backup-files nil
       mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil))
