@@ -327,14 +327,15 @@ See `advice-add' for more details."
                   (denote-filename-is-note-p buffile))
              (denote-retrieve-filename-title buffile)
            (buffer-name)))
-       'face 'font-lock-keyword-face))
+       'face 'font-lock-keyword-face
+       'help-echo (lambda (&rest _) (or (buffer-file-name) ""))))
 
      "  " 
      mode-line-percent-position
      " "
-     (list "["
+     (list "("
            ("" minor-mode-alist)
-           "]")
+           ")")
      mode-line-misc-info
      mode-line-end-spaces)))
 
@@ -1033,7 +1034,7 @@ See `advice-add' for more details."
              dust/rime-predicate-org-in-src-block-p
              rime-predicate-org-latex-mode-p))
 
-  (:face rime-default-face :background nil)
+  (:face rime-default-face :background (face-attribute 'default :background))
   (:option rime-posframe-properties nil)
   
   (defun dust/rime-finalize ()
