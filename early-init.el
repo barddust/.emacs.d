@@ -52,10 +52,7 @@
 ;; (add-to-list 'default-frame-alist '(alpha-background . 90))
 
 ;; Misc
-(setq
- url-proxy-services '(("http" . "127.0.0.1:7890")
-                      ("https" . "127.0.0.1:7890"))
-      ring-bell-function 'ignore
+(setq ring-bell-function 'ignore
       make-backup-files nil
       mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil))
       mouse-wheel-progressive-speed nil
@@ -70,6 +67,10 @@
       initial-scratch-message nil
       initial-scratch-message nil
       echo-keystrokes 0.25
-      custom-file (expand-file-name "custom.el" user-emacs-directory))
+      custom-file (expand-file-name "custom.el" user-emacs-directory)
+      load-prefer-newer t)
+
+(setq url-proxy-services '(("http" . "127.0.0.1:7890")
+                           ("https" . "127.0.0.1:7890")))
 
 (provide 'early-init)

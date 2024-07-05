@@ -52,7 +52,7 @@ CON is a list, with package-name as first element,
 and Git repository URL as second element.
 The first PACKAGE can be used to deduce the feature context."
   :repeatable t
-  :shorthand 
+  :shorthand
   (lambda (heads)
     (let ((pkg (cadr heads)))
       (if (consp pkg)
@@ -161,7 +161,7 @@ See `advice-add' for more details."
              search-ring
              regexp-search-ring
              extended-command-history)
-           
+
            savehist-autosave-interval 300
            history-length 1000
            kill-ring-max 300
@@ -188,22 +188,22 @@ See `advice-add' for more details."
            "C-j" next-line
            "C-k" previous-line
            "C-l" forward-char
-           
+
            "C-e" backward-word
            "C-r" forward-word
 
            "C-w" kill-ring-save
            "M-w" kill-region
-           
+
            "M-r" scroll-up-command
            "M-e" scroll-down-command
-           
+
            "C-z" undo
            "M-z" undo-redo
-           
+
            "C-t" recenter-top-bottom
            "M-t" move-to-window-line-top-bottom
-           
+
            "C-q" comment-line
            "C-s" save-buffer
            "C-p" help-command
@@ -243,9 +243,10 @@ See `advice-add' for more details."
   (:doc "theme settings")
   (:option circadian-themes '(("7:00" . one-light)
                               ("19:00" . dracula)))
-  
+
   (:with-hook after-init-hook
-    (:hook circadian-setup)))
+    (:hook circadian-setup))
+  )
 
 
 (setup modeline
@@ -265,7 +266,7 @@ See `advice-add' for more details."
              '(("yuck" nerd-icons-sucicon "nf-custom-common_lisp")
                ("db" nerd-icons-faicon "nf-fa-database")))
     )
-  
+
   (defcustom setup--icon-for-file
     '(("books.org" nerd-icons-mdicon "nf-md-bookshelf")
       ("20230617T173209--emacs-配置__page_emacs.org" nerd-icons-sucicon "nf-seti-config"))
@@ -277,7 +278,7 @@ See `advice-add' for more details."
       (if icon
           (apply (car icon) (cdr icon))
         (nerd-icons-icon-for-mode major-mode))))
-  
+
   (:option
    mode-line-format
    '("%e"
@@ -322,7 +323,7 @@ See `advice-add' for more details."
       (propertize
        (let ((buffile (buffer-file-name)))
          (if (and buffile
-                  (string-prefix-p (expand-file-name denote-directory) 
+                  (string-prefix-p (expand-file-name denote-directory)
                                    buffile)
                   (denote-filename-is-note-p buffile))
              (denote-retrieve-filename-title buffile)
@@ -330,7 +331,7 @@ See `advice-add' for more details."
        'face 'font-lock-keyword-face
        'help-echo (lambda (&rest _) (or (buffer-file-name) ""))))
 
-     "  " 
+     "  "
      mode-line-percent-position
      " "
      (list "("
@@ -348,6 +349,9 @@ See `advice-add' for more details."
            global-visual-line-mode t
            use-short-answers t ; `y-or-n-p' to replace `yes-or-no-p'
            )
+
+  (:with-function whitespace-cleanup
+    (:hook-into before-save-hook))
 
   (:with-mode visual-line-mode
     (:diminish))
@@ -378,6 +382,8 @@ See `advice-add' for more details."
   (:doc "shortcuts in select mode")
   (:load-path "~/Repository/select-mode")
   (:autoload global-select-mode)
+  (:option select-mode-disable-modes
+           '(minibuffer-mode))
   (global-select-mode)
   (:global "C-v" set-mark-command))
 
@@ -437,8 +443,68 @@ See `advice-add' for more details."
              :color ,(face-attribute 'default :foreground))))
 
 
+(setup elec-pair
+  (:doc "Automatic parenthesis pairing")
+  (:when-loaded
+    (:after org
+      (:local-set (append* electric-pair-pairs)
+                  '((?/ . ?/)
+                    (?* . ?*)
+                    (?_ . ?_)
+                    (?$ . ?$)
+                    (?~ . ?~))))
+    (:after typst-ts-mode
+      (:local-set (append* electric-pair-pairs)
+                  '((?$ . ?$)
+                    (?/ . ?/)
+                    (?* . ?*)
+                    (?~ . ?~))))
+
+    (:option (append* electric-pair-pairs)
+             '((?\" . ?\")
+               (?\` . ?\`)
+               (?\( . ?\))
+               (?\{ . ?\})
+               (?\< . ?\>))
+             (append* electric-pair-text-pairs)
+             '((?\` . ?\'))))
+  (electric-pair-mode))
+
+
+(setup (:package puni)
+  (:doc "Puni contains commands for soft deletion.")
+  (:require puni)
+  (:bind "<delete>" puni-forward-delete-char
+         ;; "C-<delete>" puni-forward-kill-word
+         ;; "C-<BACKSPACE>" puni-backward-kill-word
+         "M-]" puni-slurp-forward
+         "M-[" puni-slurp-backward
+         "M-{" puni-barf-forward
+         "M-}" puni-barf-backward
+         "M-\\" puni-splice
+         "M-|" puni-raise
+         "C-S-r" puni-forward-sexp
+         "C-S-e" puni-backward-sexp
+         "M-a" puni-beginning-of-sexp
+         "M-b" puni-end-of-sexp)
+  (:with-map select-mode-map
+    (:bind "A" puni-beginning-of-sexp
+           "B" puni-end-of-sexp
+           "v" puni-mark-sexp-at-point
+           "V" puni-mark-sexp-around-point
+           "R" puni-forward-sexp
+           "E" puni-backward-sexp))
+  (:unbind "C-k" "C-S-k")
+  (:with-hook (minibuffer-mode-hook
+               nov-mode-hook
+               pdf-view-mode-hook)
+    (:hook puni-disable-puni-mode))
+  (puni-global-mode))
+
+
 (setup (:package smartparens)
   (:doc "A minor mode for dealing with pairs in Emacs.")
+  (:disabled)
   (defun dust/smartparens-setup ()
     (require 'smartparens-config)
     (smartparens-global-mode t))
@@ -448,7 +514,7 @@ See `advice-add' for more details."
 
   (:with-mode turn-on-smartparens-strict-mode
     (:hook-into prog-mode))
-  
+
   (:when-loaded
     (:diminish)
 
@@ -459,7 +525,7 @@ See `advice-add' for more details."
     ;; Parens in Typst ts mode
     (sp-with-modes '(typst-mode typst-ts-mode)
       (sp-local-pair "$" "$"))
-    
+
     (:bind "M-a" sp-beginning-of-sexp
            "M-b" sp-end-of-sexp
 
@@ -497,7 +563,7 @@ See `advice-add' for more details."
      "C-j" corfu-next
      "C-k" corfu-previous
      "M-n" corfu-popupinfo-scroll-up
-     "M-p" corfu-popupinfo-scroll-down))  
+     "M-p" corfu-popupinfo-scroll-down))
   (:hook corfu-popupinfo-mode corfu-history-mode)
   (:hook-into prog-mode ielm-mode))
 
@@ -534,7 +600,7 @@ See `advice-add' for more details."
 
 
 (setup (:package orderless)
-  (:doc "An orderless completion style.")  
+  (:doc "An orderless completion style.")
   (:option completion-styles '(orderless
                                substring
                                partial-completion
@@ -558,7 +624,7 @@ See `advice-add' for more details."
 (setup (:package embark)
   (:doc "Make it easy to choose a command to run based on what is near point")
   (:option prefix-help-command #'embark-prefix-help-command
-           
+
            (append display-buffer-alist)
            '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
              nil
@@ -787,7 +853,7 @@ See `advice-add' for more details."
              (append rime-disable-predicates) 'dust/org-at-headline-stars-p)
     (setcdr (assoc "a" org-speed-commands) 'org-attach)
     (setcdr (assoc "s" org-speed-commands) 'org-schedule)
-    
+
     (:option (append* org-speed-commands)
              '(("A" . org-archive-subtree-default-with-confirmation)
                ("d" . org-deadline)))
@@ -832,14 +898,14 @@ See `advice-add' for more details."
 (setup dust/org-insert
   (:after org
     (:require dash f)
-    
+
     (defun dust/org-link--fetch-title-by-url (uri)
       (let (title)
         (with-current-buffer (url-retrieve-synchronously
                               uri t nil 10)
           (let* ((dom (libxml-parse-html-region
                        (point-min) (point-max))))
-            (setq title 
+            (setq title
                   (and dom
                        (dom-text (dom-by-tag dom 'title))))))
         (unless (or title
@@ -848,7 +914,7 @@ See `advice-add' for more details."
         title))
 
     (defun dust/org-link-make-description-function (link desc)
-      (let* ((tmp (string-split link ":")) 
+      (let* ((tmp (string-split link ":"))
              (protocol (car tmp))
              (path (string-join (cdr tmp) ":")))
         (pcase protocol
@@ -862,13 +928,13 @@ See `advice-add' for more details."
     (:option org-link-make-description-function
              #'dust/org-link-make-description-function)
 
-    
+
     (defun dust/org-insert-key-sequence ()
       "Insert key sequnce"
       (interactive)
       (insert (key-description
                (read-key-sequence-vector "Pressing... "))))
-    
+
     (defcustom dust/org-image-directory "~/Note/assets"
       "Where the images are")
 
@@ -910,7 +976,7 @@ See `advice-add' for more details."
   (:global "C-\\" org-cycle-agenda-files)
   (:option org-agenda-files '("~/Agendas"))
   (:when-loaded
-    
+
     (:option org-agenda-tags-column 0
              org-agenda-use-time-grid t
              org-agenda-time-grid '((daily today require-timed)
@@ -935,21 +1001,21 @@ See `advice-add' for more details."
              org-ellipsis "...")
 
     (:face org-modern-label :height 1.0)
-    (:face org-modern-statistics
-      :background  (face-attribute 'default :background)
-      :box nil)
+    ;; (:face org-modern-statistics
+    ;;   :background  (face-attribute 'default :background)
+    ;;   :box nil)
     (:face org-modern-tag :box nil)
-    
+
     (:option org-modern-star 'replace
              org-modern-replace-stars "*"
-             
+
              org-modern-checkbox '((?X . "󰄵")
                                    (?- . "󰄗")
                                    (?\s . "󰄱"))
              org-modern-progress '("󰝦 " "󰪞 " "󰪟 " "󰪠 "
                                    "󰪡 " "󰪢 " "󰪣 " "󰪤" "󰪥 ")
              org-modern-todo nil
-             org-modern-block-name '(("src" . (" " ""))
+             org-modern-block-name '(("src" . ("" ""))
                                      ("quote" . ("" "")))
              org-modern-keyword '(("title" . "  ")
                                   ("date" . "")
@@ -1022,7 +1088,7 @@ See `advice-add' for more details."
          (org-element-at-point)
          (org-src--on-datum-p (org-element-at-point))
          (org-in-src-block-p)))
-  
+
   (:option rime-inline-ascii-trigger 'shift-l
            rime-show-preedit 'inline
            rime-show-candidate 'posframe
@@ -1035,14 +1101,15 @@ See `advice-add' for more details."
              rime-predicate-org-latex-mode-p))
 
   (:face rime-default-face :background (face-attribute 'default :background))
+  (:face rime-highlight-candidate-face :underline t)
   (:option rime-posframe-properties nil)
-  
+
   (defun dust/rime-finalize ()
     (add-hook 'kill-emacs-hook #'rime-lib-finalize)
     (remove-hook 'input-method-activate-hook #'dust/rime-finalize))
   (:with-hook input-method-activate-hook
     (:hook dust/rime-finalize))
-  
+
   (:hook (lambda ()
            (when (rime--ascii-mode-p)
              (rime--inline-ascii))))
@@ -1065,7 +1132,7 @@ See `advice-add' for more details."
                ("g" "~/Repository/")
                ("n" "~/Note/")
                ("G" "~/.emacs.d/etc/gnus/")))
-    
+
     (:option dirvish-preview-dispatchers '(image gif audio archive))
     (dirvish-define-preview lsd (file)
                             "Use `lsd' to generate directory preview."
@@ -1073,10 +1140,10 @@ See `advice-add' for more details."
                             (when (file-directory-p file) ; we only interest in directories here
                               `(shell . ("lsd" "-al" "--icon" "never" ,file))))
     (:option (append dirvish-preview-dispatchers) 'lsd)
-    
+
     (defun dust/dirvish--truncate-line (&rest _)
       (setq-local truncate-lines t))
-    
+
     (dirvish-emerge-define-predicate is-dir
                                      "If item is a directory"
                                      (equal (car type) 'dir))
@@ -1101,14 +1168,14 @@ See `advice-add' for more details."
                ("Emacs Lisp" (extensions "el"))
                ("Python" (extensions "py"))
                ("Files" (regex . ".*"))))
-    
+
     (:option dirvish-override-dired-mode t)
-    
+
     (:with-hook dirvish-find-entry-hook
       (:hook dust/dirvish--truncate-line))
     (:with-mode dirvish-emerge-mode
       (:hook-into dirvish-setup))
-    
+
     (:bind
      "a" dirvish-quick-access
      "j" dired-next-line
@@ -1130,6 +1197,8 @@ See `advice-add' for more details."
   (:diminish)
   (defalias 'dust/forward-word 'jieba-forward-word)
   (defalias 'dust/backward-word 'jieba-backward-word)
+  (defalias 'select-mode-forward-word 'jieba-forward-word)
+  (defalias 'select-mode-backward-word 'jieba-backward-word)
   (defalias 'dust/select-word-at-point 'jieba-mark-word)
   (:option jieba-current-backend 'python)
   (:hook-into window-setup)
@@ -1137,7 +1206,7 @@ See `advice-add' for more details."
 
 
 (setup (:package imenu-list)
-  (:doc "A automatically updated buffer with imenu entries.")  
+  (:doc "A automatically updated buffer with imenu entries.")
   (:global "C-'" imenu-list-smart-toggle)
   (:option imenu-list-focus-after-activation t
            imenu-list-position 'left
@@ -1194,7 +1263,7 @@ See `advice-add' for more details."
     (:with-feature gnus-sum
       (:when-loaded
         (:option (prepend gnus-article-sort-functions) 'gnus-summary-sort-by-most-recent-date)))
-    
+
     (:option gnus-permanently-visible-groups
              "nls_.+\\|Inbox\\|Sent\\|Junk\\|nnrss:.+"
 
@@ -1209,7 +1278,8 @@ See `advice-add' for more details."
         ("Hacker News" "https://rsshub.app/hackernews")
         ("Bing 每日壁纸" "https://rsshub.app/bing")
         ("Emacs China" "https://emacs-china.org/latest.rss")
-        ("Linux Links" "https://www.linuxlinks.com/feed/"))
+        ("Linux Links" "https://www.linuxlinks.com/feed/")
+        ("Terence Tao's Blog" "https://terrytao.wordpress.com/feed/"))
       "RSS Feeds")
 
     (defun dust/gnus-rss ()
@@ -1220,7 +1290,7 @@ See `advice-add' for more details."
             (gnus-group-make-group title '(nnrss ""))
             (push (list title href title) nnrss-group-alist))))
       (nnrss-save-server-data nil))
-    
+
     (:with-hook gnus-group-prepare-hook
       (:hook dust/gnus-rss))))
 
@@ -1237,7 +1307,7 @@ See `advice-add' for more details."
       ;; inhibit inserting the heading; org-capture will insert the heading.
       (org-journal-new-entry t)
       (goto-char (point-max)))
-    
+
     ;; "https://github.com/bastibe/org-journal/issues/369"
     ;; (defconst org-journal--cache-file
     ;; (no-littering-expand-var-file-name "org-journal.cache"))
@@ -1250,9 +1320,9 @@ See `advice-add' for more details."
 
              org-journal-file-type 'daily
              org-journal-file-header 'org-journal-file-header-func
-             
+
              org-journal-enable-cache t
-             
+
              org-journal-file-format "%Y%m%d.org"
              org-journal-hide-entries-p nil
 
@@ -1282,10 +1352,15 @@ set to '(subdirectory title keywords)."
    denote-directory "~/Note"
 
    denote-date-format "<%Y-%m-%d %a>"
-   
+
    denote-infer-keywords t
    denote-sort-keywords t
    denote-file-type 'org
+   denote-org-front-matter "#+title: %s
+#+date: %s
+#+filetags: %s
+#+identifier:  %s
+"
 
    denote-prompts '(subdirectory title keywords)
    denote-excluded-directories-regexp "^assets\\|^static"
@@ -1297,7 +1372,7 @@ set to '(subdirectory title keywords)."
    xref-search-program 'ripgrep
 
    denote-templates
-   `((book . ,(concat "#+book_author: \n"
+   `((book . ,(concat "\n#+book_author: \n"
                       "#+book_translator: \n"
                       "#+book_publisher: \n"
                       "#+book_publish_date: \n\n"
@@ -1388,7 +1463,7 @@ set to '(subdirectory title keywords)."
       (:bind "j" pdf-view-next-line-or-next-page
              "k" pdf-view-previous-line-or-previous-page
              "<delete>" pdf-view-scroll-down-or-previous-page))
-    
+
     (:option (remove pdf-tools-enabled-modes)
              '(pdf-sync-minor-mode
                pdf-virtual-global-minor-mode))
@@ -1408,7 +1483,7 @@ set to '(subdirectory title keywords)."
 
 (setup (:package djvu)
   (:doc "Edit and view Djvu files via djvused")
-  
+
   )
 
 
@@ -1433,8 +1508,12 @@ set to '(subdirectory title keywords)."
   (:with-function flymake-aspell-setup
     (:hook-into org-mode)))
 
+(setup (:package popper)
+  (:doc "Popup Buffers for Emacs")
+  (popper-mode 1))
+
 (defun startup-echo-area-message ()
-  (emacs-init-time "Emacs' started in %.2f sec. Enjoy hacking :)"))
+  (emacs-init-time "Emacs starts in %.2f sec. Enjoy hacking :)"))
 
 (with-eval-after-load 'init
   (setq gc-cons-threshold (* 16 1024 1024)))
