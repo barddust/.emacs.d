@@ -246,6 +246,12 @@ See `advice-add' for more details."
 
   (:with-hook after-init-hook
     (:hook circadian-setup))
+  (:with-hook circadian-after-load-theme-hook
+    ;; Fix rime default font background color
+    (:hook (lambda ()
+             (set-face-attribute 'rime-default-face nil
+                                 :background (face-attribute 'default :background))
+             )))
   )
 
 
@@ -1224,8 +1230,7 @@ See `advice-add' for more details."
 (setup (:package (excerpt "https://github.com/fingerknight/excerpt.el")
                  emacsql)
   (:doc "Excerpt management")
-  (:option excerpt-dir (expand-file-name "~/Note"))
-  )
+  (:option excerpt-dir (expand-file-name "~/Note")))
 
 
 (setup (:package simple-mpc)
@@ -1279,7 +1284,9 @@ See `advice-add' for more details."
         ("Bing 每日壁纸" "https://rsshub.app/bing")
         ("Emacs China" "https://emacs-china.org/latest.rss")
         ("Linux Links" "https://www.linuxlinks.com/feed/")
-        ("Terence Tao's Blog" "https://terrytao.wordpress.com/feed/"))
+        ("Terence Tao's Blog" "https://terrytao.wordpress.com/feed/")
+        ("什么值得买" "https://rsshub.app/smzdm/ranking/pinlei/11/24")
+        ("NASA Astronomy Picture" "https://rsshub.app/nasa/apod"))
       "RSS Feeds")
 
     (defun dust/gnus-rss ()
@@ -1477,14 +1484,13 @@ set to '(subdirectory title keywords)."
 (setup (:package nov)
   (:doc "Major mode for reading EPUBs in Emacs.")
   (:file-match "\\.epub\\'")
-  (:bind "<delete>" nov-scroll-down)
-  )
+  (:bind "<delete>" nov-scroll-down
+         "j" scroll-up-line
+         "k" scroll-down-line))
 
 
 (setup (:package djvu)
-  (:doc "Edit and view Djvu files via djvused")
-
-  )
+  (:doc "Edit and view Djvu files via djvused"))
 
 
 (setup (:package (typst-ts-mode "https://git.sr.ht/~meow_king/typst-ts-mode"))
@@ -1511,6 +1517,11 @@ set to '(subdirectory title keywords)."
 (setup (:package popper)
   (:doc "Popup Buffers for Emacs")
   (popper-mode 1))
+
+
+;;;
+;;; Config ends here
+;;;
 
 (defun startup-echo-area-message ()
   (emacs-init-time "Emacs starts in %.2f sec. Enjoy hacking :)"))
