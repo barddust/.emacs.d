@@ -384,7 +384,7 @@ See `advice-add' for more details."
            "M-o" dust/newline-and-indent-2))
 
 
-(setup select-mode
+(setup (:package (select-mode "https://github.com/barddust/select-mode"))
   (:doc "shortcuts in select mode")
   (:load-path "~/Repository/select-mode")
   (:autoload global-select-mode)
@@ -643,12 +643,14 @@ See `advice-add' for more details."
   (:doc "Search and navigation commands based on the Emacs completion function")
   (:also-load consult-imenu)
   (:hook-into embark-collect-mode consult-preview-at-point-mode)
-  (:global "C-f f" consult-line
-         "C-f g" consult-goto-line
-         "C-f m" consult-mark
-         "C-f M" consult-global-mark
-         "C-f d" consult-ripgrep
-         "C-f i" consult-imenu))
+  (:global "C-f l" consult-line
+           "C-f f" consult-fd
+           "C-f g" consult-goto-line
+           "C-f m" consult-mark
+           "C-f M" consult-global-mark
+           "C-f d" consult-ripgrep
+           "C-f i" consult-imenu
+           "C-f o" consult-outline))
 
 
 (setup (:package phi-search)
@@ -791,22 +793,6 @@ See `advice-add' for more details."
   (:doc "Go to the definition of the symbol at point.")
   (:hook-into emacs-lisp-mode ielm-mode)
   (:diminish))
-
-
-(setup (:package yuck-mode)
-  (:doc "Emacs major mode for editing yuck configuration files")
-  (:file-match "\\.\\(yuck\\)\\'"))
-
-
-(setup (:package (sxhkd-mode "https://github.com/xFA25E/sxhkd-mode"))
-  (:doc "A major mode for editing sxhkdrc")
-  (:file-match (rx "sxhkdrc" string-end)))
-
-
-(setup (:package jinja2-mode)
-  (:doc "Jinja2 mode for emacs")
-  (:file-match "\\.\\(jinja2\\)\\'"))
-
 
 (setup (:package markdown-mode)
   (:doc "Support for Markdown")
@@ -1067,10 +1053,21 @@ See `advice-add' for more details."
        "q" (lambda () (interactive) (quit-window t))))))
 
 
-(setup org-mobile
-  (:doc "Asymmetric Sync With a Mobile Device")
-  (:autoload org-mobile-push org-mobile-pull)
-  (:option org-mobile-directory "/ssh:MyServer:/root/Org"))
+(setup dust/orgzly
+  (:doc "Command for pushing and pulling org files from webdav")
+  (:option dust/orgzly-remote-dir "root@120.78.7.18:/root/"
+           dust/orgzly-local-dir (expand-file-name user-home-directory)
+           dust/orgzly-sync-form "rsync -avzP --delete -e 'ssh -p 22 -i ~/Public/key.pem' '%sorgzly' '%s'")
+  (defun dust/orgzly-pull ()
+    (interactive)
+    (shell-command (format dust/orgzly-sync-form
+                           dust/orgzly-remote-dir
+                           dust/orgzly-local-dir)))
+  (defun dust/orgzly-push ()
+    (interactive)
+    (shell-command (format dust/orgzly-sync-form
+                           dust/orgzly-local-dir
+                           dust/orgzly-remote-dir))))
 
 
 (setup (:package rime)
@@ -1137,7 +1134,8 @@ See `advice-add' for more details."
                ("e" "~/.emacs.d/")
                ("g" "~/Repository/")
                ("n" "~/Note/")
-               ("G" "~/.emacs.d/etc/gnus/")))
+               ("G" "~/.emacs.d/etc/gnus/")
+               ("o" "~/orgzly/")))
 
     (:option dirvish-preview-dispatchers '(image gif audio archive))
     (dirvish-define-preview lsd (file)
@@ -1225,82 +1223,6 @@ See `advice-add' for more details."
       (:hook recenter-top-bottom))
     (:with-hook imenu-list-update-hook
       (:hook dust/imenu-list--truncate-line))))
-
-
-(setup (:package (excerpt "https://github.com/fingerknight/excerpt.el")
-                 emacsql)
-  (:doc "Excerpt management")
-  (:option excerpt-dir (expand-file-name "~/Note")))
-
-
-(setup (:package simple-mpc)
-  (:doc "A GNU Emacs major mode that acts as a front end to mpc.")
-  (:option simple-mpc-playlist-format "%title%\t%artist%\t%time%"
-           simple-mpc-table-separator "\t")
-  (:when-loaded
-    (defun dust/simple-mpc-load-playlist (playlist-name)
-      "Rewrite load playlist such that:
-1. Clean play list before loading;
-2. Shuffle play lists after loading.
-3. Show play list after loading."
-      (interactive
-       (list
-        (completing-read "Playlist: " (simple-mpc-call-mpc-strings "lsplaylists"))))
-      (simple-mpc-clear-current-playlist)
-      (simple-mpc-call-mpc nil (list "load" playlist-name))
-      (simple-mpc-shuffle-current-playlist)
-      (simple-mpc-maybe-refresh-playlist)
-      (simple-mpc-view-current-playlist))
-    (defalias 'simple-mpc-load-playlist 'dust/simple-mpc-load-playlist)))
-
-
-(setup gnus
-  (:doc "A newsreader for GNU Emacs")
-  (:option gnus-home-directory (expand-file-name "gnus" user-emacs-directory))
-  (:when-loaded
-    (:option (prepend auth-sources) (expand-file-name "authinfo" gnus-home-directory))
-    (:option gnus-select-method '(nnimap
-                                  "outlook"
-                                  (nnimap-address "outlook.office365.com")
-                                  (nnimap-server-port 993)
-                                  (nnimap-stream ssl)))
-
-    (:with-feature gnus-sum
-      (:when-loaded
-        (:option (prepend gnus-article-sort-functions) 'gnus-summary-sort-by-most-recent-date)))
-
-    (:option gnus-permanently-visible-groups
-             "nls_.+\\|Inbox\\|Sent\\|Junk\\|nnrss:.+"
-
-             gnus-blocked-images nil)
-
-    (defcustom dust/gnus-rss-list
-      '(("iDaily" "https://rsshub.app/idaily/today")
-        ("每日早报" "https://rsshub.app/readhub/daily")
-        ("理想生活实验室" "https://rsshub.app/toodaylab/posts")
-        ("少数派" "https://rsshub.app/sspai/index")
-        ("纽约时报" "https://rsshub.app/nytimes/dual")
-        ("Hacker News" "https://rsshub.app/hackernews")
-        ("Bing 每日壁纸" "https://rsshub.app/bing")
-        ("Emacs China" "https://emacs-china.org/latest.rss")
-        ("Linux Links" "https://www.linuxlinks.com/feed/")
-        ("Terence Tao's Blog" "https://terrytao.wordpress.com/feed/")
-        ("什么值得买" "https://rsshub.app/smzdm/ranking/pinlei/11/24")
-        ("NASA Astronomy Picture" "https://rsshub.app/nasa/apod"))
-      "RSS Feeds")
-
-    (defun dust/gnus-rss ()
-      (dolist (it dust/gnus-rss-list)
-        (unless (gnus-group-entry (concat "nnrss:" (car it)))
-          (let ((title (car it))
-                (href (cadr it)))
-            (gnus-group-make-group title '(nnrss ""))
-            (push (list title href title) nnrss-group-alist))))
-      (nnrss-save-server-data nil))
-
-    (:with-hook gnus-group-prepare-hook
-      (:hook dust/gnus-rss))))
-
 
 (setup (:package org-journal)
   (:doc "A simple personal diary / journal using in Emacs.")
@@ -1414,8 +1336,9 @@ set to '(subdirectory title keywords)."
 
 (setup (:package consult-notes)
   (:doc "Easily select notes via consult.")
-  (:with-hook minibuffer-setup-hook
-    (:hook consult-notes-denote-mode)))
+  (:with-hook window-setup-hook
+    (:hook consult-notes-denote-mode)
+    (:global "C-f n" consult-notes)))
 
 
 (setup (:package denote-menu)
@@ -1442,55 +1365,15 @@ set to '(subdirectory title keywords)."
           (time-stamp))))
     (:local-hook before-save-hook time-stamp-denote)))
 
-
-(setup org-book
-  (:doc "book management")
-  (:option dust/org-book-file "~/Books/books.org")
-  (:after org-attach
-    (:option (prepend org-attach-id-to-path-function-list)
-             (lambda (id) id))
-    (defun org-attach-file-list (dir)
-      (--filter
-       (and (not (string-prefix-p "." it))
-            (not (string-suffix-p "~" it)))
-       (directory-files dir nil))))
-  (defun org-book ()
-    (interactive)
-    (find-file dust/org-book-file)))
-
-
-(setup (:package pdf-tools pdf-view-restore)
-  (:doc "A replacement of DocView for PDF files.")
-
-  (:with-hook window-setup-hook
-    (:hook pdf-loader-install))
-
-  (:when-loaded
-    (:with-map pdf-view-mode-map
-      (:bind "j" pdf-view-next-line-or-next-page
-             "k" pdf-view-previous-line-or-previous-page
-             "<delete>" pdf-view-scroll-down-or-previous-page))
-
-    (:option (remove pdf-tools-enabled-modes)
-             '(pdf-sync-minor-mode
-               pdf-virtual-global-minor-mode))
-    (:with-hook pdf-view-mode-hook
-      (:hook (lambda ()
-               (pdf-view-restore-mode)
-               (display-line-numbers-mode 0)
-               (auto-revert-mode 0))))))
-
-
-(setup (:package nov)
-  (:doc "Major mode for reading EPUBs in Emacs.")
-  (:file-match "\\.epub\\'")
-  (:bind "<delete>" nov-scroll-down
-         "j" scroll-up-line
-         "k" scroll-down-line))
-
-
-(setup (:package djvu)
-  (:doc "Edit and view Djvu files via djvused"))
+(setup (:package popper)
+  (:doc "Summon and dismiss buffers as popups")
+  (:option popper-reference-buffers
+           '("\\*Messages\\*"
+             "Output\\*$"
+             "\\*Async Shell Command\\*"
+             help-mode
+             compilation-mode))
+  (popper-mode t))
 
 
 (setup (:package (typst-ts-mode "https://git.sr.ht/~meow_king/typst-ts-mode"))
@@ -1498,25 +1381,6 @@ set to '(subdirectory title keywords)."
   (:option typst-ts-mode-watch-options "--root ~/Kuafu"
            typst-ts-mode-compile-options "--root ~/Kuafu"
            typst-ts-mode-indent-offset 2))
-
-
-;; (setup (:package (typst-mode "https://github.com/Ziqi-Yang/typst-mode.el"))
-;;   (:doc "Typst mode")
-;;   (:disabled)
-;;   (:require typst-mode)
-;;   (:file-match "\\.typ\\'")
-;;   (:option typst-indent-offset 2))
-
-
-(setup (:package flymake-aspell)
-  (:doc "Aspell checker for flymake")
-  (:disabled)
-  (:with-function flymake-aspell-setup
-    (:hook-into org-mode)))
-
-(setup (:package popper)
-  (:doc "Popup Buffers for Emacs")
-  (popper-mode 1))
 
 
 ;;;
