@@ -602,7 +602,8 @@ See `advice-add' for more details."
     (:bind "RET" vertico-directory-enter
            "DEL" vertico-directory-delete-char
            "C-DEL" vertico-directory-delete-word
-           "M-DEL" vertico-directory-up)))
+           "M-DEL" vertico-directory-up
+           "M-r" vertico-scroll-up)))
 
 
 (setup (:package orderless)
@@ -805,14 +806,14 @@ See `advice-add' for more details."
   (:when-loaded
     (:option org-todo-keywords
              '((sequence "TODO(t)"
-                         "DOING(i)"
+                         ;; "DOING(i)"
                          "WAIT(w@/!)"
                          "|"
                          "DONE(d!)"
                          "CANCELED(c@)"))
              org-todo-keyword-faces
              '(("TODO" . (:background "red3" :foreground "white" :weight bold))
-               ("DOING" . (:background "SteelBlue" :foreground "white" :weight bold))
+               ;; ("DOING" . (:background "SteelBlue" :foreground "white" :weight bold))
                ("WAIT" . (:background "orange" :foreground "white" :weight bold))
                ("DONE" . (:background "SeaGreen4" :foreground "white" :weight bold))
                ("CANCELED" . (:foreground "#b6b6b2" :weight bold :strike-through "#b6b6b2"))))
@@ -966,7 +967,7 @@ See `advice-add' for more details."
 (setup org-agenda
   (:doc "Org Agenda settings")
   (:global "C-\\" org-cycle-agenda-files)
-  (:option org-agenda-files '("~/Agendas"))
+  (:option org-agenda-files '("~/gtd"))
   (:when-loaded
 
     (:option org-agenda-tags-column 0
@@ -976,8 +977,14 @@ See `advice-add' for more details."
                                     "......"
                                     "----------------")
              org-agenda-start-with-follow-mode t
-             org-agenda-skip-scheduled-if-done t)))
+             org-agenda-skip-scheduled-if-done t
+             org-agenda-include-diary t)))
 
+(setup org-refile
+  (:doc "Refile Org Subtrees")
+  (:option org-refile-targets
+           '((org-agenda-files :tag . "next")
+             (org-agenda-files :tag . "someday"))))
 
 (setup (:package org-modern)
   (:doc "a modern style for Org buffers.")
@@ -1055,15 +1062,17 @@ See `advice-add' for more details."
 
 (setup dust/orgzly
   (:doc "Command for pushing and pulling org files from webdav")
-  (:option dust/orgzly-remote-dir "root@120.78.7.18:/root/"
+  (:option dust/orgzly-remote-dir "root@117.72.99.210:/root/.sftpgo/data/"
            dust/orgzly-local-dir (expand-file-name user-home-directory)
-           dust/orgzly-sync-form "rsync -avzP --delete -e 'ssh -p 22 -i ~/Public/key.pem' '%sorgzly' '%s'")
+           dust/orgzly-sync-form "rsync -avzP --delete -e 'ssh -p 22 -i ~/Public/SSH_key.pem' '%sorgzly' '%s'")
   (defun dust/orgzly-pull ()
+    "Pulling items from WebDav"
     (interactive)
     (shell-command (format dust/orgzly-sync-form
                            dust/orgzly-remote-dir
                            dust/orgzly-local-dir)))
   (defun dust/orgzly-push ()
+    "PUshing items to Webdav"
     (interactive)
     (shell-command (format dust/orgzly-sync-form
                            dust/orgzly-local-dir
@@ -1226,40 +1235,44 @@ See `advice-add' for more details."
 
 (setup (:package org-journal)
   (:doc "A simple personal diary / journal using in Emacs.")
-  (:when-loaded
-    (defun org-journal-file-header-func (time)
-      "Custom function to create journal header."
-      (concat "#+title: Daily Journal\n"
-              "#+startup: overview\n\n"))
-    (defun org-journal-find-location ()
-      ;; Open today's journal, but specify a non-nil prefix argument in order to
-      ;; inhibit inserting the heading; org-capture will insert the heading.
-      (org-journal-new-entry t)
-      (goto-char (point-max)))
+  ;; (:disabled)
 
-    ;; "https://github.com/bastibe/org-journal/issues/369"
-    ;; (defconst org-journal--cache-file
-    ;; (no-littering-expand-var-file-name "org-journal.cache"))
-    (:option org-journal-dir "~/Journal"
-             org-journal-find-file 'find-file
+  ;; (defun org-journal-find-location ()
+  ;;   ;; Open today's journal, but specify a non-nil prefix argument in order to
+  ;;   ;; inhibit inserting the heading; org-capture will insert the heading.
+  ;;   (org-journal-new-entry t)
+  ;;   (goto-char (point-max)))
 
-             org-journal-date-format "%Y-%m-%d, %a"
-             org-journal-carryover-items
-             "TODO=\"TODO\"|TODO=\"DOING\"|TODO=\"WAIT\""
+  (:option org-journal-dir  "~/gtd"
 
-             org-journal-file-type 'daily
-             org-journal-file-header 'org-journal-file-header-func
+           org-journal-find-file 'find-file
 
-             org-journal-enable-cache t
+           org-journal-file-format "Next.org"
+           org-journal-date-format "%Y/%m"
 
-             org-journal-file-format "%Y%m%d.org"
-             org-journal-hide-entries-p nil
+           org-journal-time-format ""
+           ;; org-journal-carryover-items
+           ;; "TODO=\"TODO\"|TODO=\"DOING\"|TODO=\"WAIT\""
+           org-journal-file-type 'monthly
+           ;; org-journal-file-header "#+title: %B, %Y\n"
+           org-journal-enable-cache t
+           ;; org-journal-enable-agenda-integration t
 
-             org-journal-enable-agenda-integration t))
-  (defun dust/org-journal-new-journal ()
-    (interactive)
-    (org-journal-new-entry t))
-  (:global "C-c C-j" dust/org-journal-new-journal)
+           ;; org-journal-tag-alist '(("next"))
+
+           org-journal-prefix-key "C-c j"
+           )
+
+  (:with-hook org-journal-after-header-create-hook
+    (:hook (lambda ()
+             (org-set-tags "next"))))
+
+  ;; (defun dust/org-journal-new-journal ()
+    ;; (interactive)
+    ;; (point-max)
+    ;; (org-journal-new-entry t))
+  ;; (:global "C-c C-j" dust/org-journal-new-journal)
+  ;; (:global "C-c C-j" org-journal-new-entry)
   )
 
 

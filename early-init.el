@@ -70,7 +70,7 @@
       custom-file (expand-file-name "custom.el" user-emacs-directory)
       load-prefer-newer t)
 
-(setq url-proxy-services '(("http" . "127.0.0.1:7890")
-                           ("https" . "127.0.0.1:7890")))
+;; (setq url-proxy-services '(("http" . "127.0.0.1:7890")
+;;                            ("https" . "127.0.0.1:7890")))
 
 (provide 'early-init)
